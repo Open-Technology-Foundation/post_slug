@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Function: post_slug(input_str: str, repl: str = "-", preserve_case: bool = False) -> str
+Function: post_slug(input_str: str, sep_char: str = "-", preserve_case: bool = False) -> str
 
 The `post_slug` module provides a utility function for converting a given string into a URL or filename-friendly slug.
 
@@ -10,11 +10,11 @@ The function does this:
   - Forces all characters in `input_str` to ASCII (or closest representation).
   - Removes quotes, apostrophes, and backticks.
   - Forces to lowercase if not `preserve_case`.
-  - Returns only valid alpha-numeric chars, replaces all other chars with `repl` char, removes all repetitions of `repl`, and strips `repl` from ends of string.
+  - Returns only valid alpha-numeric chars, replaces all other chars with `sep_char` char, removes all repetitions of `sep_char`, and strips `sep_char` from ends of string.
 
 Function Parameters:
   - `input_str`: The string to be converted into a slug (required).
-  - `repl`: The character to replace non-alphanumeric characters (optional; default '-').
+  - `sep_char`: The character to replace non-alphanumeric characters (optional; default '-').
   - `preserve_case`: Whether to retain the original case of the string (optional; default False).
 
 Requires:
@@ -39,13 +39,13 @@ __version__ = '1.0.0'
 import re
 import unicodedata
 
-def post_slug(input_str: str, repl: str = "-", preserve_case: bool = False) -> str:
+def post_slug(input_str: str, sep_char: str = "-", preserve_case: bool = False) -> str:
   """
   Converts a given string into a URL or filename-friendly slug.
 
   Args:
     input_str (str): The string to be converted into a slug.
-    repl (str, optional): The character to replace any non-alphanumeric characters. Default '-'.
+    sep_char (str, optional): The character to replace any non-alphanumeric characters. Default '-'.
     preserve_case (bool, optional): If True, retains the original case of the string. Default False.
 
   Returns:
@@ -56,6 +56,9 @@ def post_slug(input_str: str, repl: str = "-", preserve_case: bool = False) -> s
     print(post_slug(' A title, with  Ŝtřãņġę  cHaracters ()', '_', True))
 
   """
+  # Empty `sep_char` not permitted.
+  if not sep_char: sep_char = '-'
+
   # Force all characters in `input_str` to ASCII (or closest representation).
   asciiized = unicodedata.normalize('NFKD', input_str).encode('ASCII', 'ignore').decode()
   # Remove quotes, apostrophes, and backticks.
@@ -63,10 +66,10 @@ def post_slug(input_str: str, repl: str = "-", preserve_case: bool = False) -> s
   # Force to lowercase if not preserve_case.
   if not preserve_case:
     asciiized = asciiized.lower()
-  # Return only valid alpha-numeric chars and the `repl` char, 
-  # replacing all other chars with the `repl` char, 
-  # then removing all repetitions of `repl` within the string, 
-  # and stripping `repl` from ends of the string.
-  return re.sub(r'[^a-zA-Z0-9]+', repl, asciiized).strip(repl)
+  # Return only valid alpha-numeric chars and the `sep_char` char, 
+  # replacing all other chars with the `sep_char` char, 
+  # then removing all repetitions of `sep_char` within the string, 
+  # and stripping `sep_char` from ends of the string.
+  return re.sub(r'[^a-zA-Z0-9]+', sep_char, asciiized).strip(sep_char)
 
 #fin

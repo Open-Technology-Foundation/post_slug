@@ -4,6 +4,8 @@
 
 The `post_slug` Python module provides a utility function to convert any given string into a URL or filename-friendly slug.
 
+The package also contains equivalent functions for Bash, PHP, and Javascript.
+
 ## Requirements
 
 - Python 3.10 or higher
@@ -15,7 +17,7 @@ Simply download the `post_slug.py` file and import it into your Python project.
 
 ## Usage
 
-Import the function and pass the string you want to convert as the first argument. Optionally, you can also specify a replacement character and whether to preserve the original string case.
+Import the function and pass the string you want to convert as the first argument. Optionally, you can also specify the separator character (def. '-') and whether to preserve the original string case.
 
 ### Example
 
@@ -27,8 +29,8 @@ print(post_slug("Hello, World!"))
 # Output: "hello-world"
 
 # Specifying a replacement character and preserving case
-print(post_slug('A title, with  Ŝtřãņġę  cHaracters ()', '_', True))
-# Output: "A_title_with_strange_characters"
+print(post_slug('A title, with  (Ŝtřãņġę)  cHaracters', '_', True))
+# Output: "A_title_with_Strange_cHaracters"
 ```
 
 ## Function Parameters
@@ -39,5 +41,9 @@ print(post_slug('A title, with  Ŝtřãņġę  cHaracters ()', '_', True))
 
 ## Contributing
 
-Feel free to submit pull requests or open issues to improve the module.
+Feel free to submit pull requests or open issues to improve this module.
+
+https://github.com/Open-Technology-Foundation/post_slug.git
+
+
 

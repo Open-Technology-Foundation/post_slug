@@ -1,19 +1,19 @@
 #!/usr/bin/php
 <?php
 
+/*
 if($argc>1) {
-  $t=$argv[1];
-  $repl=$argv[2];
-  $preserve=$argv[3];
+  $string 	= $argv[1];
+  $repl			= $argv[2];
+  $preserve	= $argv[3];
 } else {
-  $repl = '-';
-  $t=('mdd/sfd=(*345&*_-00Æ)abc') ."\n";
-  $preserve=false;
+  $repl 		= '-';
+  $string		= ('mdd/sfd=(*345&*_-00Æ)abc') ."\n";
+  $preserve	= false;
 }
-
-echo "orig:$t\n";
-echo "slug:" . post_slug($t, $repl, $preserve) ."\n";
-
+echo "orig: [$string]\n";
+echo "slug: [" . post_slug($string, $repl, $preserve) ."]\n";
+*/
 
 
 function post_slug($input_str, $repl='-', $preserve_case=false) {
