@@ -24,7 +24,7 @@
 post_slug() {
   shopt -s extglob
   local input_str="${1:-}" sep_char="${2:--}" preserve_case="${3:-0}"
-
+  local -i maxlen=${4:-0}
   # Convert to ASCII and remove quotes, apostrophes and backticks.
   input_str=$(echo "$input_str" | iconv -f UTF-8 -t ASCII//TRANSLIT)
   input_str="${input_str//[\`\'\"]}"
@@ -46,7 +46,24 @@ post_slug() {
   input_str="${input_str#"${sep_char}"}"
   input_str="${input_str%"${sep_char}"}"
 
+  if ((maxlen)); then
+    if (( ${#input_str} > maxlen )); then
+      input_str="${input_str:0:$maxlen}"
+      input_str="${input_str%"${sep_char}"*}"
+    fi
+  fi
+
   echo -n "$input_str"
 }
 
 declare -fx post_slug
+
+# If the script is being run directly, execute the function
+if [[ "$0" != "-bash" && "$0" != "bash" ]]; then
+  if [[ "$#" -eq 0 ]]; then
+    echo "Usage: $0 'string to slugify' [separator character] [preserve case] [max length]"
+    exit 1
+  fi
+  post_slug "$@"
+  echo ''
+fi

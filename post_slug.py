@@ -39,7 +39,7 @@ __version__ = '1.0.0'
 import re
 import unicodedata
 
-def post_slug(input_str: str, sep_char: str = "-", preserve_case: bool = False) -> str:
+def post_slug(input_str: str, sep_char: str = "-", preserve_case: bool = False, max_len:int = 0) -> str:
   """
   Converts a given string into a URL or filename-friendly slug.
 
@@ -70,6 +70,32 @@ def post_slug(input_str: str, sep_char: str = "-", preserve_case: bool = False) 
   # replacing all other chars with the `sep_char` char, 
   # then removing all repetitions of `sep_char` within the string, 
   # and stripping `sep_char` from ends of the string.
-  return re.sub(r'[^a-zA-Z0-9]+', sep_char, asciiized).strip(sep_char)
+  asciiized = re.sub(r'[^a-zA-Z0-9]+', sep_char, asciiized).strip(sep_char)
+  if max_len and len(asciiized) > max_len:
+    asciiized = asciiized[0:max_len]
+    last_sep_char_pos = asciiized.rfind(sep_char)
+    if last_sep_char_pos != -1:
+      asciiized = asciiized[0:last_sep_char_pos]
+  return asciiized
+
+if __name__ == '__main__':
+  import sys
+
+  # Check for command-line arguments
+  if len(sys.argv) < 2:
+    print("Usage: python post_slug.py 'string to slugify' [separator character] [preserve case] [max length]")
+    sys.exit(1)
+
+  # Parse command-line arguments
+  string_to_slugify = sys.argv[1]
+  separator_char = sys.argv[2] if len(sys.argv) > 2 else '-'
+  preserve_case_flag = bool(int(sys.argv[3])) if len(sys.argv) > 3 else False
+  max_len = int(sys.argv[4]) if len(sys.argv) > 4 else 0
+
+  # Call the post_slug function and print the result
+  result = post_slug(string_to_slugify, separator_char, preserve_case_flag, max_len=max_len)
+  print(result)
 
 #fin
+
+
