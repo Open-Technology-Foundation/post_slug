@@ -1,0 +1,57 @@
+#!/bin/bash
+set -e
+default_test_file=/var/log/syslog.log
+if [[ "$1" == '-h' || "$1" == '--help' ]]; then
+	echo "'post_slug.*' slug validation test script."
+	echo "usage: $(basename -- "$0") [textfile [max_len]]"
+	echo "textfile  Any text file; default $default_test_file"
+	echo "max_len    Maximum length of slug; default 0 (unlimited)"
+	exit 0
+fi
+
+declare filename="${1:-${default_test_file}}"
+declare -i max_len=${2:-0}
+declare -a sep_chars=( '-' '+' ':' '|' '_' )
+declare -i preserve_case=0
+declare line sep_char script_type
+declare -A Slugs=()
+
+declare tempfile
+tempfile=/tmp/post_slug_"$RANDOM"_"$(basename -- "$filename")".txt
+cp -- "$filename" "$tempfile"
+
+	echo "post_slug slugtest validation start"
+	echo "  - file           $filename"
+	echo "  - max_len        $max_len"
+	echo "  - separators     (${sep_chars[*]})"
+	echo "  - preserve case  (0 1)"
+	echo ''
+	while read -r line; do 
+		[[ -n "$line" ]] || continue
+		echo "post_slug Orig|s|p|$max_len: $line" 
+		for sep_char in "${sep_chars[@]}"; do
+			for preserve_case in 0 1; do
+				Slugs=()
+				for script_type in 'py' 'bash' 'php' 'js'; do
+					scr="${script_type}   "
+					slug="$(../post_slug.${script_type} "$line" "$sep_char" "$preserve_case" "$max_len" || echo "ERROR in ../post_slug.${script_type}")"
+					echo "post_slug.${scr:0:4}|$sep_char|$preserve_case|$max_len: $slug"
+					Slugs["$script_type"]="$slug"
+		 		done
+				# Validate that all slug scripts return exactly the same slug
+				unique_slugs=$(printf "%s\n" "${Slugs[@]}" | sort -u | wc -l)
+				if [ "$unique_slugs" -eq 1 ]; then
+					echo "Validation passed: All slugs are identical."
+				else
+					echo >&2 "ERROR: Validation failed: Slugs are different."
+					for key in "${!Slugs[@]}"; do
+						echo >&2 "$key: ${Slugs[$key]}"
+					done
+					exit 1
+				fi
+		 	done
+		done
+		echo '###'
+	done 	< <(cat -s -- "$tempfile")
+	echo "tempfile: $tempfile"
+	echo "post_slug slugtest validation passed"
