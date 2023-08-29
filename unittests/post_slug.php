@@ -1,5 +1,6 @@
+#!/usr/bin/php
 <?php
-function post_slug($input_str, $sep_char='-', $preserve_case=false, $max_len=0) {
+function post_slug($input_str, $sep_char='-', $preserve_case=false, $maxlen=0) {
   if(empty($sep_char)) $sep_char = '-';
 
   # Convert to ASCII and remove quotes, apostrophes, and backticks.
@@ -18,17 +19,31 @@ function post_slug($input_str, $sep_char='-', $preserve_case=false, $max_len=0) 
   # Remove leading and trailing {sep_char}.
   $input_str = trim($input_str, $sep_char);
 
-  if ($max_len) {
-    if (strlen($input_str) > $max_len) {
-      # Trim the string to max_len
-      $input_str = substr($input_str, 0, $max_len);
+  if ($maxlen) {
+    if (strlen($input_str) > $maxlen) {
+      # Trim the string to maxlen
+      $input_str = substr($input_str, 0, $maxlen);
       # Find last occurrence of sep_char and truncate
       $last_sep_char_pos = strrpos($input_str, $sep_char);
       if ($last_sep_char_pos !== false)
           $input_str = substr($input_str, 0, $last_sep_char_pos);
     }
   }
+
   return $input_str;
+}
+
+# Check if the script is run from the command line
+if (PHP_SAPI === 'cli') {
+  global $argc, $argv;
+  if($argc > 1) {
+    $string = $argv[1];
+    $sep_char = isset($argv[2]) ? $argv[2] : '-';
+    $preserve = isset($argv[3]) ? filter_var($argv[3], FILTER_VALIDATE_BOOLEAN) : false;
+    $maxlen = isset($argv[4]) ? intval($argv[4]) : 0;
+    echo post_slug($string, $sep_char, $preserve, $maxlen);
+    echo "\n";
+  }
 }
 
 #fin

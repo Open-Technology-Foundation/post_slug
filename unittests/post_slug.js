@@ -1,4 +1,5 @@
-//#!/usr/bin/env node
+#!/usr/bin/env node
+
 /**
  * Function: post_slug(inputStr: string, sepChar: string = "-", preserveCase: boolean = false, maxLen: number = 0) -> string
  * 
@@ -17,6 +18,7 @@
  * @param {number} maxLen - The maximum length for the slug.
  * @returns {string} - The resulting slug.
  */
+
 function post_slug(inputStr, sepChar = "-", preserveCase = false, maxLen = 0) {
   // Handle empty replacement character
   if (!sepChar) sepChar = '-';
@@ -49,7 +51,18 @@ function post_slug(inputStr, sepChar = "-", preserveCase = false, maxLen = 0) {
       inputStr = inputStr.substring(0, lastSepCharPos);
     }
   }
+  
   return inputStr;
 }
 
-//fin
+// Command-line interface
+if (require.main === module) {
+  const args = process.argv.slice(2);
+  if (args.length !== 0) {
+    const stringToSlugify = args[0];
+    const separatorChar = args[1] || "-";
+    const preserveCaseFlag = args[2] === "1";
+    const maxLen = parseInt(args[3]) || 0;
+    console.log(post_slug(stringToSlugify, separatorChar, preserveCaseFlag, maxLen));
+  }
+}

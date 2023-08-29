@@ -78,4 +78,24 @@ def post_slug(input_str: str, sep_char: str = "-", preserve_case: bool = False, 
       asciiized = asciiized[0:last_sep_char_pos]
   return asciiized
 
+if __name__ == '__main__':
+  import sys
+
+  # Check for command-line arguments
+  if len(sys.argv) < 2:
+    print("Usage: python post_slug.py 'string to slugify' [separator character] [preserve case] [max length]")
+    sys.exit(1)
+
+  # Parse command-line arguments
+  string_to_slugify = sys.argv[1]
+  separator_char = sys.argv[2] if len(sys.argv) > 2 else '-'
+  preserve_case_flag = bool(int(sys.argv[3])) if len(sys.argv) > 3 else False
+  max_len = int(sys.argv[4]) if len(sys.argv) > 4 else 0
+
+  # Call the post_slug function and print the result
+  result = post_slug(string_to_slugify, separator_char, preserve_case_flag, max_len=max_len)
+  print(result)
+
 #fin
+
+

@@ -1,13 +1,15 @@
 #!/bin/bash
 set -e
-default_test_file=/var/log/syslog.log
-if [[ "$1" == '-h' || "$1" == '--help' ]]; then
-	echo "'post_slug.*' slug validation test script."
-	echo "usage: $(basename -- "$0") [textfile [max_len]]"
-	echo "textfile  Any text file; default $default_test_file"
-	echo "max_len    Maximum length of slug; default 0 (unlimited)"
-	exit 0
-fi
+_ent_0=$(readlink -fn -- "$0")
+PRG=${_ent_0##*/} 
+PRGDIR=${_ent_0%/*}
+# Change into the unittests directory.
+cd "$PRGDIR"
+
+tempdir=/tmp/post_slug_"$RANDOM"
+mkdir -p "$tempdir"
+
+default_test_file=/var/log/syslog
 
 declare filename="${1:-${default_test_file}}"
 declare -i max_len=${2:-0}
@@ -15,12 +17,128 @@ declare -a sep_chars=( '-' '+' ':' '|' '_' )
 declare -i preserve_case=0
 declare line sep_char script_type
 declare -A Slugs=()
+declare -A Script_Templates=()
+declare -a Script_Types=( 'py' 'bash' 'php' 'js' )
 
-declare tempfile
-tempfile=/tmp/post_slug_"$RANDOM"_"$(basename -- "$filename")".txt
-cp -- "$filename" "$tempfile"
+if [[ "$1" == '-h' || "$1" == '--help' ]]; then
+	echo "Slug Validation for 'post_slug.*' modules."
+	echo "Usage: $PRG [textfile [max_len]]"
+	echo "textfile   Any text file; default $default_test_file"
+	echo "max_len    Maximum length of slug; default $max_len (0=unlimited)"
+	echo "Script types to be tested are (${Script_Types[*]})"
+	echo "Separator chars to be used are (${sep_chars[*]})"
+	exit 0
+fi
 
-	echo "post_slug slugtest validation start"
+Script_Types=()
+
+prg="$(command -v 'python')"
+#shellcheck disable=SC2016
+if [[ -n "$prg" ]]; then
+	Script_Types+=('py')
+	Script_Templates['py']="#!/usr/bin/env $prg
+--SCRIPT--
+
+if __name__ == '__main__':
+  import sys
+
+  # Check for command-line arguments
+  if len(sys.argv) < 2:
+    print('Usage: python post_slug.py string2slugify [separator character] [preserve case] [max length]')
+    sys.exit(1)
+
+  # Parse command-line arguments
+  string_to_slugify = sys.argv[1]
+  separator_char = sys.argv[2] if len(sys.argv) > 2 else '-'
+  preserve_case_flag = bool(int(sys.argv[3])) if len(sys.argv) > 3 else False
+  max_len = int(sys.argv[4]) if len(sys.argv) > 4 else 0
+
+  # Call the post_slug function and print the result
+  result = post_slug(string_to_slugify, separator_char, preserve_case_flag, max_len=max_len)
+  print(result)
+"
+else
+	echo >&2 "python was not found and shall not be tested."
+fi
+
+prg="$(command -v 'node')"
+#shellcheck disable=SC2016
+if [[ -n "$prg" ]]; then
+	Script_Types+=('js')
+	Script_Templates['js']="#!/usr/bin/env $prg
+--SCRIPT--
+
+// Command-line interface
+if (require.main === module) {
+  const args = process.argv.slice(2);
+  if (args.length !== 0) {
+    const stringToSlugify = args[0];
+    const separatorChar = args[1] || '-';
+    const preserveCaseFlag = args[2] === '1';
+    const maxLen = parseInt(args[3]) || 0;
+    console.log(post_slug(stringToSlugify, separatorChar, preserveCaseFlag, maxLen));
+  }
+}
+"
+else
+	echo >&2 "Program 'node' was not found. Javascript shall not be tested."
+fi
+
+prg="$(command -v 'bash')"
+#shellcheck disable=SC2016
+if [[ -n "$prg" ]]; then
+	Script_Types+=('bash')
+	Script_Templates['bash']="#!/usr/bin/env $prg"'
+--SCRIPT--
+
+# If the script is being run directly, execute the function
+if [[ "$0" != "-bash" && "$0" != "bash" ]]; then
+  if [[ "$#" -eq 0 ]]; then
+    echo "Usage: $(basename $0) "string to slugify" [separator character] [preserve case] [max length]"
+    exit 1
+  fi
+  post_slug "$@"
+  echo ""
+fi
+'
+else
+	echo >&2 "Program bash was not found and shall not be tested."
+fi
+
+prg="$(command -v 'php')"
+#shellcheck disable=SC2016
+if [[ -n "$prg" ]]; then
+	Script_Types+=('php')
+	Script_Templates['php']="#!/usr/bin/env $prg"'
+--SCRIPT--
+
+# Check if the script is run from the command line
+if (PHP_SAPI === "cli") {
+  global $argc, $argv;
+  if($argc > 1) {
+    $string = $argv[1];
+    $sep_char = isset($argv[2]) ? $argv[2] : "-";
+    $preserve = isset($argv[3]) ? filter_var($argv[3], FILTER_VALIDATE_BOOLEAN) : false;
+    $maxlen = isset($argv[4]) ? intval($argv[4]) : 0;
+    echo post_slug($string, $sep_char, $preserve, $maxlen);
+    echo "\n";
+  }
+}
+'
+else
+	echo >&2 "Program php cli was not found and shall not be tested."
+fi
+
+for script_type in "${Script_Types[@]}"; do
+	temp=$(cat -s "../post_slug.$script_type")
+	Script_Templates[$script_type]=${Script_Templates[$script_type]/--SCRIPT--/"$temp"}
+	echo "${Script_Templates[$script_type]}" > "$tempdir/post_slug.$script_type"
+done
+chmod 775 -- "$tempdir"/*
+ls -la "$tempdir"
+#echo "${Script_Templates['py']}"
+
+	echo "'post_slug' modules slugtest validation start"
 	echo "  - file           $filename"
 	echo "  - max_len        $max_len"
 	echo "  - separators     (${sep_chars[*]})"
@@ -32,9 +150,10 @@ cp -- "$filename" "$tempfile"
 		for sep_char in "${sep_chars[@]}"; do
 			for preserve_case in 0 1; do
 				Slugs=()
-				for script_type in 'py' 'bash' 'php' 'js'; do
+				for script_type in "${Script_Types[@]}"; do
 					scr="${script_type}   "
-					slug="$(../post_slug.${script_type} "$line" "$sep_char" "$preserve_case" "$max_len" || echo "ERROR in ../post_slug.${script_type}")"
+					slug=$("$tempdir"/post_slug."$script_type" "$line" "$sep_char" "$preserve_case" "$max_len" || echo "ERROR in ../post_slug.${script_type}")
+					#slug="$(../post_slug.${script_type} "$line" "$sep_char" "$preserve_case" "$max_len" || echo "ERROR in ../post_slug.${script_type}")"
 					echo "post_slug.${scr:0:4}|$sep_char|$preserve_case|$max_len: $slug"
 					Slugs["$script_type"]="$slug"
 		 		done
@@ -52,6 +171,7 @@ cp -- "$filename" "$tempfile"
 		 	done
 		done
 		echo '###'
-	done 	< <(cat -s -- "$tempfile")
-	echo "tempfile: $tempfile"
-	echo "post_slug slugtest validation passed"
+	done 	< <(cat -s -- "$filename")
+	echo "'post_slug' modules slugtest validation OK"
+	rm -rf "$tempdir"
+#fin
