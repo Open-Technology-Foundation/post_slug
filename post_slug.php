@@ -21,9 +21,9 @@ function post_slug($input_str, $sep_char='-', $preserve_case=false, $maxlen=0) {
 
   if ($maxlen) {
     if (strlen($input_str) > $maxlen) {
-      // Trim the string to maxlen
+      # Trim the string to maxlen
       $input_str = substr($input_str, 0, $maxlen);
-      // Find last occurrence of sep_char and truncate
+      # Find last occurrence of sep_char and truncate
       $last_sep_char_pos = strrpos($input_str, $sep_char);
       if ($last_sep_char_pos !== false)
           $input_str = substr($input_str, 0, $last_sep_char_pos);
@@ -33,7 +33,7 @@ function post_slug($input_str, $sep_char='-', $preserve_case=false, $maxlen=0) {
   return $input_str;
 }
 
-// Check if the script is run from the command line
+# Check if the script is run from the command line
 if (PHP_SAPI === 'cli') {
   global $argc, $argv;
   if($argc > 1) {

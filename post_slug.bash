@@ -20,7 +20,6 @@
 #         : # ^ returns: "a_title_with_strange_characters"
 #         :
 # Depends : iconv
-
 post_slug() {
   shopt -s extglob
   local input_str="${1:-}" sep_char="${2:--}" preserve_case="${3:-0}"
@@ -52,10 +51,8 @@ post_slug() {
       input_str="${input_str%"${sep_char}"*}"
     fi
   fi
-
   echo -n "$input_str"
 }
-
 declare -fx post_slug
 
 # If the script is being run directly, execute the function
