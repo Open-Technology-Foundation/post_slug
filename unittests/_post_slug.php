@@ -1,3 +1,4 @@
+#!/usr/bin/env /usr/bin/php
 <?php
 /**
  * Converts a given string into a URL or filename-friendly slug.
@@ -70,3 +71,17 @@ echo post_slug(" A title, with Ŝtřãņġę cHaracters ()", "_", true) . "\n";
 */
 
 // fin
+
+# Check if the script is run from the command line
+if (PHP_SAPI === "cli") {
+  global $argc, $argv;
+  if($argc > 1) {
+    $string = $argv[1];
+    $sep_char = isset($argv[2]) ? $argv[2] : "-";
+    $preserve = isset($argv[3]) ? filter_var($argv[3], FILTER_VALIDATE_BOOLEAN) : false;
+    $maxlen = isset($argv[4]) ? intval($argv[4]) : 0;
+    echo post_slug($string, $sep_char, $preserve, $maxlen);
+    echo "\n";
+  }
+}
+

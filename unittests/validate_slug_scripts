@@ -1,32 +1,60 @@
 #!/bin/bash
 set -e
+declare _ent_0 PRG PRGDIR
 _ent_0=$(readlink -fn -- "$0")
 PRG=${_ent_0##*/} 
 PRGDIR=${_ent_0%/*}
 # Change into the unittests directory.
 cd "$PRGDIR"
 
-tempdir=/tmp/post_slug_"$RANDOM"
-mkdir -p "$tempdir"
+open_file_in_editor() {
+  local -i line=$1
+  local file=$2
+  local editor=${EDITOR:-/usr/bin/nano}
+  echo "Opening '$file' at line $line using $editor"
+	read -r -p "Would you like to edit '$file'? (y/n) " yn
+	if [[ "${yn,,}" == 'y' ]]; then
+  	$editor +$line "$file"
+	fi
+}
 
-default_test_file=/var/log/syslog
+declare -i verbose=1
+if [[ "$1" == '-q' || "$1" == '--quiet' ]]; then
+	verbose=0
+	shift
+fi
 
 declare filename="${1:-${default_test_file}}"
 declare -i max_len=${2:-0}
-declare -a sep_chars=( '-' '+' ':' '|' '_' )
+declare -a sep_chars=()
+IFS=',' read -ra sep_chars <<< "${3:-_-}"
+declare -i preserve_cases=()
+IFS=',' read -ra preserve_cases <<< "${4:-01}"
 declare -i preserve_case=0
-declare line sep_char script_type
 declare -A Slugs=()
 declare -A Script_Templates=()
 declare -a Script_Types=( 'py' 'bash' 'php' 'js' )
+declare line sep_char script_type
+declare -i count=0 unique_slugs=0
+declare -a Errs=()
 
-if [[ "$1" == '-h' || "$1" == '--help' ]]; then
+if [[ "$1" == '-h' || "$1" == '--help' || ${#@} == 0 ]]; then
 	echo "Slug Validation for 'post_slug.*' modules."
-	echo "Usage: $PRG [textfile [max_len]]"
-	echo "textfile   Any text file; default $default_test_file"
+	echo ''
+	echo "Usage: $PRG [-q] [textfile [max_len [seps [cases]]]]"
+	echo "textfile   Any text file; required"
 	echo "max_len    Maximum length of slug; default $max_len (0=unlimited)"
-	echo "Script types to be tested are (${Script_Types[*]})"
+	echo "seps       Separator chars, delimited with ',', eg, '-,_,+'"
+	echo "cases      Cases to check, can be 0, 1, or '0,1' (1=preserve case)"
+	echo '-q         If specified, only report errors.'
+	echo 'Note: all parameters are positional.'
+	echo "Modules to be tested are (${Script_Types[*]})"
 	echo "Separator chars to be used are (${sep_chars[*]})"
+	echo ''
+	echo 'Examples:'
+	echo "./$PRG datasets/headlines.txt 0 '-' 1"
+	echo "./$PRG datasets/booktitles.txt 0 '_,-,|' 0,1"
+	echo "./$PRG -q datasets/booktitles.txt 127 '-' 0"
 	exit 0
 fi
 
@@ -58,7 +86,7 @@ if __name__ == '__main__':
   print(result)
 "
 else
-	echo >&2 "python was not found and shall not be tested."
+	echo >&2 "Program 'python' was not found and will not be tested."
 fi
 
 prg="$(command -v 'node')"
@@ -81,7 +109,7 @@ if (require.main === module) {
 }
 "
 else
-	echo >&2 "Program 'node' was not found. Javascript shall not be tested."
+	echo >&2 "Program 'node' was not found. Javascript will not be tested."
 fi
 
 prg="$(command -v 'bash')"
@@ -102,7 +130,7 @@ if [[ "$0" != "-bash" && "$0" != "bash" ]]; then
 fi
 '
 else
-	echo >&2 "Program bash was not found and shall not be tested."
+	echo >&2 "Program 'bash' was not found and will not be tested."
 fi
 
 prg="$(command -v 'php')"
@@ -126,52 +154,73 @@ if (PHP_SAPI === "cli") {
 }
 '
 else
-	echo >&2 "Program php cli was not found and shall not be tested."
+	echo >&2 "Program 'php' cli was not found and will not be tested."
 fi
 
 for script_type in "${Script_Types[@]}"; do
 	temp=$(cat -s "../post_slug.$script_type")
 	Script_Templates[$script_type]=${Script_Templates[$script_type]/--SCRIPT--/"$temp"}
-	echo "${Script_Templates[$script_type]}" > "$tempdir/post_slug.$script_type"
+	echo "${Script_Templates[$script_type]}" > "$PRGDIR/_post_slug.$script_type"
+	chmod 775 "$PRGDIR/_post_slug.$script_type"
 done
-chmod 775 -- "$tempdir"/*
-ls -la "$tempdir"
-#echo "${Script_Templates['py']}"
 
-	echo "'post_slug' modules slugtest validation start"
+	echo "'post_slug' modules slug validation test"
 	echo "  - file           $filename"
 	echo "  - max_len        $max_len"
 	echo "  - separators     (${sep_chars[*]})"
-	echo "  - preserve case  (0 1)"
+	echo "  - preserve case  (${preserve_cases[*]})"
+	echo "  - modules        (${Script_Types[*]})"
 	echo ''
 	while read -r line; do 
+		((count+=1))
 		[[ -n "$line" ]] || continue
-		echo "post_slug Orig|s|p|$max_len: $line" 
+		((verbose)) \
+				&& printf "%5s|%s|%s|%s: %s\n" "line" "s" "p" "$max_len" "$line" \
+				|| echo -ne "\r" $count
 		for sep_char in "${sep_chars[@]}"; do
-			for preserve_case in 0 1; do
+			for preserve_case in "${preserve_cases[@]}"; do
 				Slugs=()
 				for script_type in "${Script_Types[@]}"; do
-					scr="${script_type}   "
-					slug=$("$tempdir"/post_slug."$script_type" "$line" "$sep_char" "$preserve_case" "$max_len" || echo "ERROR in ../post_slug.${script_type}")
-					#slug="$(../post_slug.${script_type} "$line" "$sep_char" "$preserve_case" "$max_len" || echo "ERROR in ../post_slug.${script_type}")"
-					echo "post_slug.${scr:0:4}|$sep_char|$preserve_case|$max_len: $slug"
+					slug=$("$PRGDIR"/_post_slug."$script_type" "$line" "$sep_char" "$preserve_case" "$max_len" || { echo "ERROR in ../_post_slug.${script_type}"; exit 1; } )
+					((verbose)) && printf "%5s|%s|%s|%s: %s\n" "${script_type}" "$sep_char" "$preserve_case" "$max_len" "$slug"
 					Slugs["$script_type"]="$slug"
 		 		done
 				# Validate that all slug scripts return exactly the same slug
 				unique_slugs=$(printf "%s\n" "${Slugs[@]}" | sort -u | wc -l)
-				if [ "$unique_slugs" -eq 1 ]; then
-					echo "Validation passed: All slugs are identical."
+				if (( unique_slugs == 1 )); then
+					((verbose)) && echo "OK: All slugs are identical."
 				else
-					echo >&2 "ERROR: Validation failed: Slugs are different."
+					echo >&2 -e "\n! Validation failed at line $count in '$filename': Slugs are not the same ($unique_slugs)."
+					printf >&2 "%5s: %s\n" "line" "$line"
 					for key in "${!Slugs[@]}"; do
-						echo >&2 "$key: ${Slugs[$key]}"
+						printf >&2 "%5s: %s\n" "$key" "${Slugs[$key]}"
 					done
-					exit 1
+					if ((verbose)) && tty --quiet 2> /dev/null; then
+						open_file_in_editor "$line" "$file"
+						read -r -p "Would you like to continue reading '$file'? (y/n) " yn
+						[[ "${yn,,}" == 'y' ]] || exit 1
+					else
+						Errs+=("$count,$filename")
+					fi
+					echo >&2 ''
 				fi
 		 	done
 		done
-		echo '###'
-	done 	< <(cat -s -- "$filename")
+		((verbose)) && echo ''
+	done 	< <(cat -- "$filename")
+
+	# Attempt to edit error causing lines in file
+	if (( ${#Errs[@]} )); then
+		for errs in "${Errs[@]}"; do
+echo "$errs"
+			line="${errs%%,*}"
+			file="${errs#*,}"
+	  	open_file_in_editor "$line" "$file"
+		done
+	else
+	  echo "Usage: $0 line_number file_name"
+	fi
+
+
 	echo "'post_slug' modules slugtest validation OK"
-	rm -rf "$tempdir"
 #fin

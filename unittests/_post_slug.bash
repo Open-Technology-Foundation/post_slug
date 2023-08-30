@@ -1,3 +1,4 @@
+#!/usr/bin/env /usr/bin/bash
 #!/bin/bash
 #
 # post_slug: Converts a given string into a URL or filename-friendly slug.
@@ -81,3 +82,14 @@ post_slug() {
 declare -fx post_slug
 
 #fin
+
+# If the script is being run directly, execute the function
+if [[ "$0" != "-bash" && "$0" != "bash" ]]; then
+  if [[ "$#" -eq 0 ]]; then
+    echo "Usage: $(basename $0) "string to slugify" [separator character] [preserve case] [max length]"
+    exit 1
+  fi
+  post_slug "$@"
+  echo ""
+fi
+
