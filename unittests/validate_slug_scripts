@@ -164,13 +164,14 @@ for script_type in "${Script_Types[@]}"; do
 	chmod 775 "$PRGDIR/_post_slug.$script_type"
 done
 
-	echo "'post_slug' modules slug validation test"
-	echo "  - file           $filename"
-	echo "  - max_len        $max_len"
-	echo "  - separators     (${sep_chars[*]})"
-	echo "  - preserve case  (${preserve_cases[*]})"
-	echo "  - modules        (${Script_Types[*]})"
-	echo ''
+cat <<-EOT
+	'post_slug' modules slug validation test
+  	- file           $filename
+  	- max_len        $max_len
+  	- separators     (${sep_chars[*]})
+  	- preserve case  (${preserve_cases[*]})
+  	- modules        (${Script_Types[*]})
+	EOT
 	while read -r line; do 
 		((count+=1))
 		[[ -n "$line" ]] || continue
