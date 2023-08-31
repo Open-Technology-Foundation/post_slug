@@ -94,8 +94,8 @@ translation_table = str.maketrans({
     'Đ': 'D',
     'ð': 'd',
     'đ': 'd',
+    'Ł': 'L',
     '´': '',
-    'Ł': 'L'
 })
 """
 Kludge Dictionary for multi-character replacements

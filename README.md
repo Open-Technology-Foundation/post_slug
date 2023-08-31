@@ -13,7 +13,7 @@ This package contains `post_slug` function modules for Python, Bash, PHP, and Ja
 	post_slug.php
 	post_slug.js
 
-Every language function takes the following parameters:
+Every language function takes the same following parameters:
 
 	"string" [separator char='-'] [preserve case=0] [max length=0]
 
@@ -40,8 +40,7 @@ Many non-Latin characters cannot be transliterated into the ASCII set, and can o
 
 The Python and Javascript function modules use `	unicodedata.normalize('NFKD', ...)` for transliteration, whereas Bash and PHP use `iconv('UTF-8', 'ASCII//TRANSLIT', ...)`.
 
-Manual Transliterations ("kludges") are required to account for the very small number of inconsistencies in translation that might
-appear.
+Manual Transliterations ("kludges") are required to account for the very small number of inconsistencies in translation that might appear.
 
 These kludges greatly increase cross-language slug similiarity for most typical input.
 
@@ -69,21 +68,24 @@ In the unittests subdirectory, there is a script `/validate_slug_scripts`, which
 	Modules to be tested are (py bash php js)
 	Separator chars to be used are (_-)
 
-When run `validate_slug_scripts` generates standalone command-line scripts for each of the languages, from the source of each of the modules.  These standalone scripts are prefaced with '\_' and the execute permission are set.
+When run, `validate_slug_scripts` generates standalone command-line scripts for each of the languages, utilizing the source of each of the modules in this package.  These standalone scripts are prefaced with '\_' and the execute permission is set.
 
 ```.../post_slug/unittests$ ls
 	datasets         _post_slug.js   _post_slug.py
 	_post_slug.bash  _post_slug.php  validate_slug_scripts
 ```
 
-The command-line scripts in the `unittests` directory may be used for testing, and even production, but keep in mind that they are regenerated from module sources whenever `validate_slug_scripts` is run.
+The command-line __Bash__ \_scripts in the `unittests` directory may be used for testing, and even production, but keep in mind that they are regenerated from module sources whenever `validate_slug_scripts` is executed.
 
 ```bash
 ./_post_slug.php "After Buddhism: Rethinking the Dharma for a Secular Age"
 # Outputs:after-buddhism-rethinking-the-dharma-for-a-secular-age
-
-./_post_slug.php "After Buddhism: Rethinking the Dharma for a Secular Age" '_' 1 40
-# Outputs:After_Buddhism_Rethinking_the_Dharma
+./_post_slug.bash "After Buddhism: Rethinking the Dharma for a Secular Age"
+# Outputs:after-buddhism-rethinking-the-dharma-for-a-secular-age
+./_post_slug.js "After Buddhism: Rethinking the Dharma for a Secular Age"
+# Outputs:after-buddhism-rethinking-the-dharma-for-a-secular-age
+./_post_slug.py "After Buddhism: Rethinking the Dharma for a Secular Age"
+# Outputs:after-buddhism-rethinking-the-dharma-for-a-secular-age
 ```
 
 The `unittests/datasets` directory contains test data files.
@@ -128,25 +130,35 @@ Each `post_slug` module takes four parameters: the string you want to convert, a
 ```python
 from post_slug import post_slug
 
-# Basic usage
+# Basic usage, default options; '_' as sep_char, not preserving case:
 print(post_slug("Hello, World! ... it's nice to see you. .. from time 2 time ;)...."))  
 # Outputs: "hello-world-its-nice-to-see-you-from-time-2-time"
 
-# Specifying a replacement character and preserving case
+# Specifying '_' as sep_char, preserving case:
 print(post_slug('A title, but embedded with these  (Ŝtřãņġę)  CHARacters... !^_^! ', '_', True))
 # Outputs: "A_title_but_embedded_with_these_Strange_CHARacters"
+
+# Specifying '_' as sep_char, not preserving case:
+print(post_slug("Über die Universitäts-Philosophie  — Arthur Schopenhauer, 1851", '_'))
+# Outputs: "uber_die_universitats_philosophie_arthur_schopenhauer_1851"
+
 ```
 
 ```bash
 source post_slug.bash
 
-# Basic usage
+# Basic usage, default options; '_' as sep_char, not preserving case:
 echo $(post_slug "Hello, World! ... it's nice to see you. .. from time 2 time ;)....")
 # Outputs: "hello-world-its-nice-to-see-you-from-time-2-time"
 
-# Specifying a replacement character and preserving case
-post_slug 'A title, but embedded with these  (Ŝtřãņġę)  CHARacters... !^_^! ' '_' 1
+# Specifying '_' as sep_character, preserving case:
+echo $(post_slug 'A title, but embedded with these  (Ŝtřãņġę)  CHARacters... !^_^! ' '_' 1)
 # Outputs: "A_title_but_embedded_with_these_Strange_CHARacters"
+
+# Specifying '_' as sep_char, not preserving case:
+echo $(post_slug "Über die Universitäts-Philosophie  — Arthur Schopenhauer, 1851" '_')
+# Outputs: "uber_die_universitats_philosophie_arthur_schopenhauer_1851"
+
 ```
 
 
