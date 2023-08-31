@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+
 declare _ent_0 PRG PRGDIR
 _ent_0=$(readlink -fn -- "$0")
 PRG=${_ent_0##*/} 
@@ -7,29 +8,30 @@ PRGDIR=${_ent_0%/*}
 # Change into the unittests directory.
 cd "$PRGDIR"
 
+is.interactive() { 
+  local -i isit=0
+  [[ -t 1 ]] && isit=1
+  [[ "${PS1+x}" == 'x' ]] && (( ${#PS1} > 1 )) && isit=1
+  [[ "$-" == *"i"* ]] && isit=1
+  [[ -p /dev/stdout ]] && isit=0
+  [[ ! -t 1 ]] && [[ ! -p /dev/stdout ]] && isit=0
+  return $(( ! isit ))
+}
+
 open_file_in_editor() {
   local -i line=$1
   local file=$2
   local editor=${EDITOR:-/usr/bin/nano}
-  echo "Opening '$file' at line $line using $editor"
-	read -r -p "Would you like to edit '$file'? (y/n) " yn
-	if [[ "${yn,,}" == 'y' ]]; then
-  	$editor +$line "$file"
-	fi
+	read -r -p "Edit $file at line $line? (y/n) " yn
+	[[ "${yn,,}" == 'y' ]] || return 0
+	$editor +$line "$file"
+	return 0
 }
 
-declare -i verbose=1
-if [[ "$1" == '-q' || "$1" == '--quiet' ]]; then
-	verbose=0
-	shift
-fi
-
-declare filename="${1:-${default_test_file}}"
-declare -i max_len=${2:-0}
-declare -a sep_chars=()
-IFS=',' read -ra sep_chars <<< "${3:-_-}"
-declare -i preserve_cases=()
-IFS=',' read -ra preserve_cases <<< "${4:-01}"
+declare filename
+declare -i max_len
+declare -a sep_chars=(- _)
+declare -i preserve_cases=(0 1)
 declare -i preserve_case=0
 declare -A Slugs=()
 declare -A Script_Templates=()
@@ -38,34 +40,52 @@ declare line sep_char script_type
 declare -i count=0 unique_slugs=0
 declare -a Errs=()
 
-if [[ "$1" == '-h' || "$1" == '--help' || ${#@} == 0 ]]; then
-	echo "Slug Validation for 'post_slug.*' modules."
-	echo ''
-	echo "Usage: $PRG [-q] [textfile [max_len [seps [cases]]]]"
-	echo "textfile   Any text file; required"
-	echo "max_len    Maximum length of slug; default $max_len (0=unlimited)"
-	echo "seps       Separator chars, delimited with ',', eg, '-,_,+'"
-	echo "cases      Cases to check, can be 0, 1, or '0,1' (1=preserve case)"
-	echo '-q         If specified, only report errors.'
-	echo 'Note: all parameters are positional.'
-	echo "Modules to be tested are (${Script_Types[*]})"
-	echo "Separator chars to be used are (${sep_chars[*]})"
-	echo ''
-	echo 'Examples:'
-	echo "./$PRG datasets/headlines.txt 0 '-' 1"
-	echo "./$PRG datasets/booktitles.txt 0 '_,-,|' 0,1"
-	echo "./$PRG -q datasets/booktitles.txt 127 '-' 0"
+usage() {
+	cat <<-EOT
+	Slug Validation for 'post_slug.*' modules.
+	
+	Usage: $PRG [[-q] textfile [max_len [seps [cases]]]]
+	
+	textfile   Any text file; required
+	max_len    Maximum length of slug; default 0 (0=unlimited)
+	seps       Separator chars, delimited with ',', eg, '-,_,+'
+	cases      Cases to check, can be 0, 1, or '0,1' (1=preserve case)
+	-q         If specified, only report errors.
+	
+	Note: all parameters are positional.
+
+	Modules to be tested are (${Script_Types[*]})
+	Separator chars to be used are (${sep_chars[*]})
+	
+	Examples:
+	$PRG datasets/headlines.txt 0 '-' 1
+	$PRG datasets/booktitles.txt 0 '_,-,|' 0,1
+	$PRG -q datasets/booktitles.txt 127 '-' 0
+	EOT
 	exit 0
+}
+
+[[ "$1" == '-h' || "$1" == '--help' || ${#@} == 0 ]] && usage
+
+declare -i verbose=1
+if [[ "$1" == '-q' || "$1" == '--quiet' ]]; then
+	verbose=0
+	shift
+	[[ ${#@} == 0 ]] && usage
 fi
 
-Script_Types=()
+filename="$1"
+max_len=${2:-0}
+IFS=',' read -ra sep_chars <<< "${3:-_,-}"
+IFS=',' read -ra preserve_cases <<< "${4:-0,1}"
 
+Script_Types=() # reset script types
 prg="$(command -v 'python')"
 #shellcheck disable=SC2016
 if [[ -n "$prg" ]]; then
 	Script_Types+=('py')
 	Script_Templates['py']="#!/usr/bin/env $prg
---SCRIPT--
+--MODULE--
 
 if __name__ == '__main__':
   import sys
@@ -86,7 +106,7 @@ if __name__ == '__main__':
   print(result)
 "
 else
-	echo >&2 "Program 'python' was not found and will not be tested."
+	echo >&2 "Program 'python' not found. Module post_slug.py will not be tested."
 fi
 
 prg="$(command -v 'node')"
@@ -94,7 +114,7 @@ prg="$(command -v 'node')"
 if [[ -n "$prg" ]]; then
 	Script_Types+=('js')
 	Script_Templates['js']="#!/usr/bin/env $prg
---SCRIPT--
+--MODULE--
 
 // Command-line interface
 if (require.main === module) {
@@ -109,7 +129,7 @@ if (require.main === module) {
 }
 "
 else
-	echo >&2 "Program 'node' was not found. Javascript will not be tested."
+	echo >&2 "Program 'node' was not found. Module post_slug.js will not be tested."
 fi
 
 prg="$(command -v 'bash')"
@@ -117,7 +137,7 @@ prg="$(command -v 'bash')"
 if [[ -n "$prg" ]]; then
 	Script_Types+=('bash')
 	Script_Templates['bash']="#!/usr/bin/env $prg"'
---SCRIPT--
+--MODULE--
 
 # If the script is being run directly, execute the function
 if [[ "$0" != "-bash" && "$0" != "bash" ]]; then
@@ -130,7 +150,7 @@ if [[ "$0" != "-bash" && "$0" != "bash" ]]; then
 fi
 '
 else
-	echo >&2 "Program 'bash' was not found and will not be tested."
+	echo >&2 "Program 'bash' not found. Module post_slug.bash will not be tested."
 fi
 
 prg="$(command -v 'php')"
@@ -138,7 +158,7 @@ prg="$(command -v 'php')"
 if [[ -n "$prg" ]]; then
 	Script_Types+=('php')
 	Script_Templates['php']="#!/usr/bin/env $prg"'
---SCRIPT--
+--MODULE--
 
 # Check if the script is run from the command line
 if (PHP_SAPI === "cli") {
@@ -154,18 +174,19 @@ if (PHP_SAPI === "cli") {
 }
 '
 else
-	echo >&2 "Program 'php' cli was not found and will not be tested."
+	echo >&2 "Program 'php' cli was not found. Module post_slug.php will not be tested."
 fi
 
+# create _script files
 for script_type in "${Script_Types[@]}"; do
 	temp=$(cat -s "../post_slug.$script_type")
-	Script_Templates[$script_type]=${Script_Templates[$script_type]/--SCRIPT--/"$temp"}
+	Script_Templates[$script_type]=${Script_Templates[$script_type]/--MODULE--/"$temp"}
 	echo "${Script_Templates[$script_type]}" > "$PRGDIR/_post_slug.$script_type"
 	chmod 775 "$PRGDIR/_post_slug.$script_type"
 done
 
 cat <<-EOT
-	'post_slug' modules slug validation test
+	Slug Validation Tests for 'post_slug.*' modules.
   	- file           $filename
   	- max_len        $max_len
   	- separators     (${sep_chars[*]})
@@ -196,13 +217,7 @@ cat <<-EOT
 					for key in "${!Slugs[@]}"; do
 						printf >&2 "%5s: %s\n" "$key" "${Slugs[$key]}"
 					done
-					if ((verbose)) && tty --quiet 2> /dev/null; then
-						open_file_in_editor "$line" "$file"
-						read -r -p "Would you like to continue reading '$file'? (y/n) " yn
-						[[ "${yn,,}" == 'y' ]] || exit 1
-					else
-						Errs+=("$count,$filename")
-					fi
+					Errs+=("$count,$filename")
 					echo >&2 ''
 				fi
 		 	done
@@ -213,15 +228,15 @@ cat <<-EOT
 	# Attempt to edit error causing lines in file
 	if (( ${#Errs[@]} )); then
 		for errs in "${Errs[@]}"; do
-echo "$errs"
 			line="${errs%%,*}"
 			file="${errs#*,}"
-	  	open_file_in_editor "$line" "$file"
+	  	echo "Slug mismatch error in line $line file '$file'"
+	  	if is.interactive; then
+		  	open_file_in_editor "$line" "$file"
+		  fi
 		done
-	else
-	  echo "Usage: $0 line_number file_name"
 	fi
 
+	echo "'post_slug' modules slugtest validation finished"
 
-	echo "'post_slug' modules slugtest validation OK"
 #fin

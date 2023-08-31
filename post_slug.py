@@ -106,7 +106,9 @@ multi_char_replacements = {
     '™': '-TM',
     'Œ': 'OE',
     'ß': 'ss',
-    'æ': 'ae'
+    'æ': 'ae',
+    'â�¹': 'Rs',
+    '�': '-',
 }
 
 def post_slug(input_str: str, sep_char: str = '-', 

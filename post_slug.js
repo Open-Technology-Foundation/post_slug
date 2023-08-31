@@ -50,7 +50,9 @@ const multiCharReplacements = {
   '™': '-TM',
   'Œ': 'OE',
   'ß': 'ss',
-  'æ': 'ae'
+  'æ': 'ae',
+  'â�¹': 'Rs',
+  '�': '-',
 };
 
 function post_slug(inputStr, sepChar = "-", preserveCase = false, maxLen = 0) {

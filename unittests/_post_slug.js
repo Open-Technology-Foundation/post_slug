@@ -36,9 +36,9 @@ const translationTable = {
   'Đ': 'D',
   'ð': 'd',
   'đ': 'd',
-  '´': '',
   'Ł': 'L',
   'ʼ': '',
+  '´': '',
   'ʾ': ''
 };
 
@@ -51,7 +51,9 @@ const multiCharReplacements = {
   '™': '-TM',
   'Œ': 'OE',
   'ß': 'ss',
-  'æ': 'ae'
+  'æ': 'ae',
+  'â�¹': 'Rs',
+  '�': '-',
 };
 
 function post_slug(inputStr, sepChar = "-", preserveCase = false, maxLen = 0) {
@@ -59,16 +61,16 @@ function post_slug(inputStr, sepChar = "-", preserveCase = false, maxLen = 0) {
   if (sepChar == '') sepChar = '-';
  
   // Kludges to increase cross platform slug similiarity.
-  /**
-   * Apply single-character replacements
-   */
+    /**
+     * Apply single-character replacements
+     */
   for (const [oldChar, newChar] of Object.entries(translationTable)) {
     const regex = new RegExp(oldChar, 'g');
     inputStr = inputStr.replace(regex, newChar);
   }
-  /**
-   * Apply multi-character replacements.
-   */
+    /**
+     * Apply multi-character replacements.
+     */
   for (const [oldStr, newStr] of Object.entries(multiCharReplacements)) {
     const regex = new RegExp(oldStr, 'g');
     inputStr = inputStr.replace(regex, newStr);

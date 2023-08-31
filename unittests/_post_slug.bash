@@ -40,6 +40,8 @@ post_slug() {
 
   # Kludges to increase cross platform output similiarity.
   input_str=${input_str//—/-}
+  input_str=${input_str//â�¹/Rs}
+  input_str=${input_str//�/-}
   input_str=${input_str//½/"$sep_char"}
   input_str=${input_str//¼/"$sep_char"}
   input_str=${input_str// \& / and }

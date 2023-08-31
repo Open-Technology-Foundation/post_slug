@@ -59,8 +59,28 @@ import re
 import unicodedata
 
 """
-Kludge transliteration 
-Create a translation table for single-character replacements
+Kludge transliterations
+
+Manual Transliterations are required to account for the 
+small number of inconsistencies in translation that might 
+appear.
+
+The Python and Javascript function modules use 
+  unicodedata.normalize('NFKD', ...)
+
+whereas Bash and PHP use:
+  iconv('UTF-8', 'ASCII//TRANSLIT', ...)
+
+Thus Python and Javascript in particular require their different
+Kludge Tables.  Bash only requires a few kludgy fixups, while PHP
+required very few.
+
+This means, that these modules are not 100% accurate in situations
+where Non-Latin text is used or embedded. However, depending on 
+the input used, this is statistically insignificant using 
+real world data.
+
+Translation table for single-character replacements
 """
 translation_table = str.maketrans({
     '–': '-',
@@ -75,22 +95,24 @@ translation_table = str.maketrans({
     'Đ': 'D',
     'ð': 'd',
     'đ': 'd',
+    'Ł': 'L',
     '´': '',
-    'Ł': 'L'
 })
 """
 Kludge Dictionary for multi-character replacements
 """
 multi_char_replacements = {
-    ' & ': ' and ',
+    ' & ': ' and ', # this is questionable; only valid for English.
     'œ': 'oe',
     '™': '-TM',
     'Œ': 'OE',
     'ß': 'ss',
-    'æ': 'ae'
+    'æ': 'ae',
+    'â�¹': 'Rs',
+    '�': '-',
 }
 
-def post_slug(input_str: str, sep_char: str = "-", 
+def post_slug(input_str: str, sep_char: str = '-', 
     preserve_case: bool = False, max_len:int = 0) -> str:
   """
   Convert a given string into a URL or filename-friendly slug.
@@ -141,35 +163,11 @@ def post_slug(input_str: str, sep_char: str = "-",
   if sep_char == '': sep_char = '-'
 
   # Kludges to increase cross platform output similiarity.
-  """
-  input_str = input_str.replace('–', '-')\
-      .replace(' & ', ' and ')\
-      .replace('½', sep_char)\
-      .replace('¼', sep_char)\
-      .replace('œ', 'oe')\
-      .replace('™', '-TM')\
-      .replace('ı', 'i')\
-      .replace('•', 'o')\
-      .replace('ł', 'l')\
-      .replace('Œ', 'OE')\
-      .replace('—', '-')\
-      .replace('★', ' ')\
-      .replace('ß', 'ss')\
-      .replace('ø', 'o')\
-      .replace('æ', 'ae')\
-      .replace('Đ', 'D')\
-      .replace('ð', 'd')\
-      .replace('đ', 'd')\
-      .replace('´', '')\
-      .replace('Ł', 'L')
-  """
-
   # Apply single-character replacements using str.translate()
   input_str = input_str.translate(translation_table)
   # Apply multi-character replacements
   for old, new in multi_char_replacements.items():
       input_str = input_str.replace(old, new)
-  # Kludges end------------- ------------------------------------
 
   # Remove all HTML entities.
   input_str = re.sub(r'&[^ \t]*;', sep_char, input_str)
