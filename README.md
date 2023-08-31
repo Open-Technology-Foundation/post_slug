@@ -1,8 +1,8 @@
-# Slug Generator Modules for Python/Bash/PHP/Javascript
+# Slug Generator Functions for Python/Bash/PHP/Javascript
 
 ## Overview
 
-The `post_slug` module is a versatile utility designed to convert any given text into a URL-friendly or filename-friendly ASCII slug. Although the primary use case is to generate slugs for headlines, article titles, and book titles, it is also suitable for generating slugs for URLs and filenames. This module offers implementations in Python, Bash, PHP, and JavaScript.
+The `post_slug` functions are designed to convert any given text into a URL- or filename- friendly ASCII slug.  Although the primary use case is to generate slugs for headlines, article titles, and book titles, it is also suitable for generating slugs for URLs and filenames generally. This package offers implementations of `post_slug` in Python, Bash, PHP, and JavaScript.
 
 The `post_slug` functions perform multiple transformations on the input string to create a slug that is both human-readable and safe for use in URLs or filenames, and that is _consistent between each implementation_.
 
@@ -13,11 +13,17 @@ This package contains `post_slug` function modules for Python, Bash, PHP, and Ja
 	post_slug.php
 	post_slug.js
 
-All these function modules generate slugs using the same methodology, thus ensuring an extremely high degree of consistency. For example:
+Every language function takes the following parameters:
+
+	"string" [separator char='-'] [preserve case=0] [max length=0]
+
+Optional parameters, when used, must be applied consistently across the project or platform.
+
+All function modules generate slugs using the same methodology, thus ensuring an extremely high degree of consistency. For example:
 
 	The Ŝtřãņġę (Inner) Life! of the "Outsider"
 
-Using default parameters, with any of the modules, this becomes:
+Using default parameters, with any of the modules, becomes:
 
 	the-strange-inner-life-of-the-outsider
 
@@ -29,11 +35,6 @@ Be aware that this would cause an empty string to be returned.
 
 Many non-Latin characters cannot be transliterated into the ASCII set, and can only be ignored.
 
-Every language module takes the following parameters:
-
-	"string" [separator char='-'] [preserve case=0] [max length=0]
-
-The optional parameters, when used, must be applied consistently across the project or platform.
 
 ### Manual Transliterations (Kludges)
 
@@ -87,7 +88,6 @@ The command-line scripts in the `unittests` directory may be used for testing, a
 
 The `unittests/datasets` directory contains test data files.
 
-
 ## Requirements
 
 ### Python:
@@ -113,10 +113,13 @@ Each `post_slug` module takes four parameters: the string you want to convert, a
 
 	`input_str` : str
       The string to be converted into a slug.
+
   	`sep_char` : str, optional
       The character used to replace any non-alphanumeric characters. Defaults to '-'.
+
   	`preserve_case` : bool, optional
       If True|1, retains the original case of the string. Defaults to False|0.
+
   	`max_len` : int, optional
       Maximum length for the resulting string. If set, the string may be truncated at the last `sep_char`. Defaults to 0 (unlimited).
 
