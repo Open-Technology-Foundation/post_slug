@@ -37,6 +37,7 @@ post_slug() {
 
   # Empty `sep_char` not permitted.
   [[ "$sep_char" == '' ]] && sep_char='-'
+  sep_char=${sep_char:0:1}
 
   # Kludges to increase cross platform output similiarity.
   input_str=${input_str//—/-}

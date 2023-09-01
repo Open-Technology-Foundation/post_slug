@@ -24,7 +24,8 @@
  */
 function post_slug($input_str, $sep_char = "-", $preserve_case = false, $max_len = 0) {
   // Empty $sep_char not permitted
-  if (empty($sep_char)) $sep_char = '-';
+  if ($sep_char == '') $sep_char = '-';
+  $sep_char = $sep_char[0];
 
   // Kludges to increase cross-platform output similarity
   $input_str = str_replace('–', '-', $input_str);

@@ -58,7 +58,8 @@ const multiCharReplacements = {
 function post_slug(inputStr, sepChar = "-", preserveCase = false, maxLen = 0) {
   // Handle empty replacement character
   if (sepChar == '') sepChar = '-';
- 
+  sepChar = sepChar[0]
+  
   // Kludges to increase cross platform slug similiarity.
     /**
      * Apply single-character replacements

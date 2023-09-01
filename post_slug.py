@@ -160,6 +160,7 @@ def post_slug(input_str: str, sep_char: str = '-',
   """
   # Empty `sep_char` not permitted.
   if sep_char == '': sep_char = '-'
+  sep_char = sep_char[0]
 
   # Kludges to increase cross platform output similiarity.
   # Apply single-character replacements using str.translate()
