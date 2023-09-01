@@ -2,9 +2,11 @@
 
 ## Overview
 
-The `post_slug` functions are designed to convert any given text into a URL- or filename- friendly ASCII slug.  Although the primary use case is to generate slugs for headlines, article titles, and book titles, it is also suitable for generating slugs for URLs and filenames generally. This package offers implementations of `post_slug` in Python, Bash, PHP, and JavaScript.
+The `post_slug` functions are designed to convert any given text into a URL- or filename- friendly ASCII slug.  The returned slug will only ever contain alphanumerics (a-zA-Z0-9), plus the defined separator character (default '-').
 
-The `post_slug` functions perform multiple transformations on the input string to create a slug that is both human-readable and safe for use in URLs or filenames, and that is _consistent between each implementation_.
+Although the primary use case is to generate slugs for headlines, article titles, and book titles, it is also suitable for generating slugs for URLs and filenames generally. This package offers implementations of `post_slug` in Python, Bash, PHP, and JavaScript.
+
+The `post_slug` functions perform multiple transformations on the input string to create a slug that is both human-readable and safe for use in URLs or filenames, and most importantly, that it is _consistent_ between each implementation.
 
 This package contains `post_slug` function modules for Python, Bash, PHP, and Javascript:
 
