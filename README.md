@@ -56,19 +56,25 @@ The bottom line is that these modules are not 100% accurate in situations where 
 
 In the unittests subdirectory, there is a script `/validate_slug_scripts`, which is used to test slug consistency between the modules on any test data.
 
-	Usage: validate_slug_scripts [-q] [textfile [max_len [seps [cases]]]]
-
+	Slug Validation for 'post_slug.*' modules.
+	
+	Usage: validate_slug_scripts [[-q] textfile [max_len [seps [cases]]]]
+	
+	textfile   Any text file; required
+	max_len    Maximum length of slug; default 0 (0=unlimited)
+	seps       Separator chars, delimited with ',', eg, '-,_,+'
+	cases      Cases to check, can be 0, 1, or '0,1' (1=preserve case)
+	-q         If specified, only report errors.
+	
 	Note: all parameters are positional.
-
-	-q         	If specified, only report errors, 
-				do not display each validation test.
-	textfile   	Any text file; required
-	max_len    	Maximum length of slug; default 0 (0=unlimited)
-	seps       	Separator chars, delimited with ',', eg, '-,_,+'
-	cases      	Cases to check, can be 0, 1, or '0,1' (1=preserve case)
-
+	
 	Modules to be tested are (py bash php js)
-	Separator chars to be used are (_-)
+	Separator chars to be used are (- _)
+	
+	Examples:
+	validate_slug_scripts datasets/headlines.txt 0 '-' 1
+	validate_slug_scripts datasets/booktitles.txt 0 '_,-,|' 0,1
+	validate_slug_scripts -q datasets/booktitles.txt 127 '-' 0
 
 When run, `validate_slug_scripts` generates standalone command-line scripts for each of the languages, utilizing the source of each of the modules in this package.  These standalone scripts are prefaced with '\_' and the execute permission is set.
 
@@ -94,18 +100,18 @@ The `unittests/datasets` directory contains test data files.
 
 ## Requirements
 
-### Python:
+#### Python:
 	- Python >= 3.10
 	- module `unicodedata`
 
-### Bash:
+#### Bash:
     - Bash >= 5.1
     - package `iconv` >= 2.3
 
-### PHP:
+#### PHP:
     - PHP >= 8.0 
 
-### Javascript:
+#### Javascript:
 	- node >= 12.2
 
 
@@ -166,7 +172,7 @@ echo $(post_slug "Über die Universitäts-Philosophie  — Arthur Schopenhauer, 
 
 ## Contributing
 
-Feel free to submit pull requests or open issues to improve the modules in this package.
+Feel free to submit pull requests or open issues to improve the code or documentation in this package.  Bear in mind that changes to code in one module may necessitate changes to the other modules.
 
 https://github.com/Open-Technology-Foundation/post_slug.git
 
