@@ -8,6 +8,18 @@ Although the primary use case is to generate slugs for headlines, article titles
 
 The `post_slug` functions perform multiple transformations on the input string to create a slug that is both human-readable and safe for use in URLs or filenames, and most importantly, that it is _consistent_ between each implementation.
 
+In order, the transformations are:
+
+  - Language specific character replacement kludges (see Kludges).
+  - Removal of _all_ HTML entities.
+  - Transliteration all characters to ASCII (or closest representation)
+  - Removal of _all_ quotes, apostrophes, and backticks.
+  - Optionally convert all to lowercase.
+  - Replacement of _all_ remaining non-alphanumeric characters with `sep_char`.
+  - Replacement of all multiple occurrences of `sep_char` with a single `sep_char`.
+  - Removal of leading and trailing `sep_char`.
+  - Optionally truncate string at `max_len`, backed up to last `sep_char`.
+
 This package contains `post_slug` function modules for Python, Bash, PHP, and Javascript:
 
 	post_slug.py
@@ -37,7 +49,6 @@ Be aware that this would cause an empty string to be returned.
 
 Many non-Latin characters cannot be transliterated into the ASCII set, and can only be ignored.
 
-
 ### Manual Transliterations (Kludges)
 
 The Python and Javascript function modules use `unicodedata.normalize('NFKD', ...)` for transliteration, whereas Bash and PHP use `iconv('UTF-8', 'ASCII//TRANSLIT')`.
@@ -52,25 +63,26 @@ If required, the kludge tables can be edited in the source.   Please generate pu
 
 The bottom line is that these modules are not 100% consistent in situations where Non-Latin text is embedded within the string.  However, depending on the input used, this is statistically insignificant.
 
-### Validating Slug Consistency (`validate_slug_scripts`)
+
+## Validating Slug Consistency (`validate_slug_scripts`)
 
 In the unittests subdirectory, there is a script `/validate_slug_scripts`, which is used to test slug consistency between the modules on any test data.
 
 	Slug Validation for 'post_slug.*' modules.
 
 	Usage: validate_slug_scripts [[-q] textfile [max_len [seps [cases]]]]
-	
+
 	textfile   Any text file; required
 	max_len    Maximum length of slug; default 0 (0=unlimited)
 	seps       Separator chars, delimited with ',', eg, '-,_,+'
 	cases      Cases to check, can be 0, 1, or '0,1' (1=preserve case)
 	-q         If specified, only report errors.
-	
+
 	Note: all parameters are positional.
-	
+
 	Modules to be tested are (py bash php js)
 	Separator chars to be used are (- _)
-	
+
 	Examples:
 	validate_slug_scripts datasets/headlines.txt 0 '-' 1
 	validate_slug_scripts datasets/booktitles.txt 0 '_,-,|' 0,1
@@ -97,6 +109,7 @@ The command-line __Bash__ \_scripts in the `unittests` directory may be used for
 ```
 
 The `unittests/datasets` directory contains test data files.
+
 
 ## Requirements
 
