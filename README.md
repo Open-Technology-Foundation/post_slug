@@ -40,24 +40,24 @@ Many non-Latin characters cannot be transliterated into the ASCII set, and can o
 
 ### Manual Transliterations (Kludges)
 
-The Python and Javascript function modules use `	unicodedata.normalize('NFKD', ...)` for transliteration, whereas Bash and PHP use `iconv('UTF-8', 'ASCII//TRANSLIT', ...)`.
+The Python and Javascript function modules use `unicodedata.normalize('NFKD', ...)` for transliteration, whereas Bash and PHP use `iconv('UTF-8', 'ASCII//TRANSLIT')`.
 
 Manual Transliterations ("kludges") are required to account for the very small number of inconsistencies in translation that might appear.
 
 These kludges greatly increase cross-language slug similiarity for most typical input.
 
-Python and Javascript in particular require their different kludge tables, both single- and multi- character.  Bash and PHP only require a few kludges.
+Python and Javascript in particular require their different kludge tables, both single- and multi- character.  Bash and PHP require the fewest kludges.
 
 If required, the kludge tables can be edited in the source.   Please generate pull requests to add to these translitation tables where necessary.
 
-The bottom line is that these modules are not 100% accurate in situations where Non-Latin text is used, embedded or encountered. However, depending on the input used, this is statistically insignificant using real world data in situations where these modules would be typically used.
+The bottom line is that these modules are not 100% consistent in situations where Non-Latin text is embedded within the string.  However, depending on the input used, this is statistically insignificant.
 
 ### Validating Slug Consistency (`validate_slug_scripts`)
 
 In the unittests subdirectory, there is a script `/validate_slug_scripts`, which is used to test slug consistency between the modules on any test data.
 
 	Slug Validation for 'post_slug.*' modules.
-	
+
 	Usage: validate_slug_scripts [[-q] textfile [max_len [seps [cases]]]]
 	
 	textfile   Any text file; required
