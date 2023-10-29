@@ -64,9 +64,9 @@ If required, the kludge tables can be edited in the source.   Please generate pu
 The bottom line is that these modules are not 100% consistent in situations where Non-Latin text is embedded within the string.  However, depending on the input used, this is statistically insignificant.
 
 
-## Validating Slug Consistency (`validate_slug_scripts`)
+## Validating Slug Consistency
 
-In the unittests subdirectory, there is a script `/validate_slug_scripts`, which is used to test slug consistency between the modules on any test data.
+In the unittests subdirectory, there is a script `/validate_slug_scripts`, which is used to test slug consistency between the modules on any test data.  Some test data is contained within `unittests/datasets`.
 
 	Slug Validation for 'post_slug.*' modules.
 
@@ -90,7 +90,8 @@ In the unittests subdirectory, there is a script `/validate_slug_scripts`, which
 
 When run, `validate_slug_scripts` generates standalone command-line scripts for each of the languages, utilizing the source of each of the modules in this package.  These standalone scripts are prefaced with '\_' and the execute permission is set.
 
-```.../post_slug/unittests$ ls
+```
+.../post_slug/unittests$ ls
 	datasets         _post_slug.js   _post_slug.py
 	_post_slug.bash  _post_slug.php  validate_slug_scripts
 ```
@@ -107,8 +108,6 @@ The command-line __Bash__ \_scripts in the `unittests` directory may be used for
 ./_post_slug.py "After Buddhism: Rethinking the Dharma for a Secular Age"
 # Outputs:after-buddhism-rethinking-the-dharma-for-a-secular-age
 ```
-
-The `unittests/datasets` directory contains test data files.
 
 
 ## Requirements
@@ -138,7 +137,7 @@ Each `post_slug` module takes four parameters: the string you want to convert, a
       The string to be converted into a slug.
 
   	`sep_char` : str, optional
-      The character used to replace any non-alphanumeric characters. Defaults to '-'.
+      The character used to replace any non-alphanumeric characters. Default is '-'.
 
   	`preserve_case` : bool, optional
       If True|1, retains the original case of the string. Defaults to False|0.
