@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """
-post_slug Module
-================
+# post_slug Module
 
 This module provides a utility function `post_slug` for converting a given string into a URL or filename-friendly slug.
 
@@ -15,19 +14,19 @@ The function performs multiple transformations to ensure the resulting slug is r
   - Retains only valid alphanumeric characters, replacing others with a separator character.
   - Optionally truncates the string to a maximum length, cutting off at the last separator character.
 
-Parameters:
------------
-- `input_str` (str): The string to be converted into a slug.
-- `sep_char` (str, optional): The character used to replace non-alphanumeric characters. Default is '-'.
-- `preserve_case` (bool, optional): If True, retains the original case of the string. Default is False.
-- `max_len` (int, optional): Maximum length for the resulting string. Default is 0, which means no limit.
+### Parameters:
 
-Returns:
---------
-- str: The resulting slug.
+    - `input_str` (str): The string to be converted into a slug.
+    - `sep_char` (str, optional): The character used to replace non-alphanumeric characters. Default is '-'.
+    - `preserve_case` (bool, optional): If True, retains the original case of the string. Default is False.
+    - `max_len` (int, optional): Maximum length for the resulting string. Default is 0, which means no limit.
 
-Example Usage:
---------------
+### Returns:
+
+    - str: The resulting slug.
+
+## Example Usage:
+
 ```python
 from post_slug import post_slug
 
@@ -44,31 +43,17 @@ print(post_slug(" A title, with Ŝtřãņġę cHaracters ()", "_", True))
 # Output: "A_title_with_strange_characters"
 ```
 
-Requires:
----------
-- Python 3.10 or higher
-- `re` and `unicodedata` modules
-
-Version:
---------
-1.0.0
-"""
-__version__ = '1.0.0'
-import re
-import unicodedata
-
-"""
-Kludge transliterations
+## Kludge transliterations
 
 Manual Transliterations are required to account for the 
 small number of inconsistencies in translation that might 
 appear.
 
 The Python and Javascript function modules use 
-  unicodedata.normalize('NFKD', ...)
+    unicodedata.normalize('NFKD', ...)
 
 whereas Bash and PHP use:
-  iconv('UTF-8', 'ASCII//TRANSLIT', ...)
+    iconv('UTF-8', 'ASCII//TRANSLIT', ...)
 
 Thus Python and Javascript in particular require their different
 Kludge Tables.  Bash only requires a few kludgy fixups, while PHP
@@ -79,8 +64,20 @@ where Non-Latin text is used or embedded. However, depending on
 the input used, this is statistically insignificant using 
 real world data.
 
-Translation table for single-character replacements
+## Requires:
+
+    - Python 3.10 or higher
+    - `re` and `unicodedata` modules
+
+## Version:
+
+    1.0.0
+
 """
+__version__ = '1.0.0'
+import re
+import unicodedata
+
 translation_table = str.maketrans({
     '–': '-',
     '½': '-',
