@@ -79,40 +79,43 @@ import re
 import unicodedata
 
 translation_table = str.maketrans({
-    '–': '-',
-    '½': '-',
-    '¼': '-',
-    'ı': 'i',
-    '•': 'o',
-    'ł': 'l',
-    '—': '-',
-    '★': ' ',
-    'ø': 'o',
-    'Đ': 'D',
-    'ð': 'd',
-    'đ': 'd',
-    'Ł': 'L',
-    '´': '',
+  '–': '-',
+  '½': '-',
+  '¼': '-',
+  'ı': 'i',
+  '•': 'o',
+  'ł': 'l',
+  '—': '-',
+  '★': ' ',
+  'ø': 'o',
+  'Đ': 'D',
+  'ð': 'd',
+  'đ': 'd',
+  'Ł': 'L',
+  '´': '',
 })
-"""
-Kludge Dictionary for multi-character replacements
-"""
+
 multi_char_replacements = {
-    ' & ': ' and ', # this is questionable; only valid for English.
-    'œ': 'oe',
-    '™': '-TM',
-    'Œ': 'OE',
-    'ß': 'ss',
-    'æ': 'ae',
-    'â�¹': 'Rs',
-    '�': '-',
+  ' & ': ' and ', # this is questionable; only valid for English.
+  'œ': 'oe',
+  '™': '-TM',
+  'Œ': 'OE',
+  'ß': 'ss',
+  'æ': 'ae',
+  'â�¹': 'Rs',
+  '�': '-',
 }
 
-def post_slug(input_str: str, sep_char: str = '-', 
-    preserve_case: bool = False, max_len:int = 0) -> str:
+# Precompile regular expressions
+ps_html_entity_re = re.compile(r'&[^ \t]*;')
+ps_non_alnum_re = re.compile(r'[^a-zA-Z0-9]+')
+ps_quotes_re = re.compile(r"[\"'`’´]")
+
+def post_slug(input_str: str, sep_char: str = '-',
+    preserve_case: bool = False, max_len: int = 0) -> str:
   """
   Convert a given string into a URL or filename-friendly slug.
-  
+
   This function performs multiple transformations on the input string to create
   a slug that is both human-readable and safe for use in URLs or filenames.
 
@@ -136,16 +139,16 @@ def post_slug(input_str: str, sep_char: str = '-',
   --------
   >>> post_slug("Hello, World!")
   'hello-world'
-  
+
   >>> post_slug("Hello, World!", "_", True)
   'Hello_World'
-  
+
   >>> post_slug("A title, with Ŝtřãņġę cHaracters ()")
   'a-title-with-strange-characters'
-  
+
   >>> post_slug(" A title, with Ŝtřãņġę cHaracters ()", "_", True)
   'A_title_with_strange_characters'
-  
+
   Requires:
   --------
   Python 3.10 or higher.
@@ -159,39 +162,40 @@ def post_slug(input_str: str, sep_char: str = '-',
   if sep_char == '': sep_char = '-'
   sep_char = sep_char[0]
 
-  # Kludges to increase cross platform output similiarity.
+  # Kludges to increase cross platform output similarity.
   # Apply single-character replacements using str.translate()
   input_str = input_str.translate(translation_table)
-  # Apply multi-character replacements
-  for old, new in multi_char_replacements.items():
-      input_str = input_str.replace(old, new)
+
+  # Apply multi-character replacements using a single regex substitution
+  input_str = re.sub('|'.join(re.escape(key) for key in multi_char_replacements.keys()),
+                     lambda m: multi_char_replacements[m.group(0)], input_str)
 
   # Remove all HTML entities.
-  input_str = re.sub(r'&[^ \t]*;', sep_char, input_str)
- 
+  input_str = ps_html_entity_re.sub(sep_char, input_str)
+
   # Force all characters in `input_str` to ASCII (or closest representation).
   input_str = unicodedata.normalize('NFKD', input_str).encode('ASCII', 'ignore').decode()
 
   # Remove quotes, apostrophes, and backticks.
-  input_str = re.sub(r"[\"'`’´]", '', input_str)
+  input_str = ps_quotes_re.sub('', input_str)
 
   # Force to lowercase if not preserve_case.
   if not preserve_case:
     input_str = input_str.lower()
 
-  # Return only valid alpha-numeric chars and the `sep_char` char, 
-  # replacing all other chars with the `sep_char` char, 
-  # then removing all repetitions of `sep_char` within the string, 
+  # Return only valid alpha-numeric chars and the `sep_char` char,
+  # replacing all other chars with the `sep_char` char,
+  # then removing all repetitions of `sep_char` within the string,
   # and stripping `sep_char` from ends of the string.
-  input_str = re.sub(r'[^a-zA-Z0-9]+', sep_char, input_str).strip(sep_char)
+  input_str = ps_non_alnum_re.sub(sep_char, input_str).strip(sep_char)
 
   # If max_len > 0, then check for overlength string,
   # and truncate on last sep_char.
   if max_len and len(input_str) > max_len:
-    input_str = input_str[0:max_len]
+    input_str = input_str[:max_len]
     last_sep_char_pos = input_str.rfind(sep_char)
     if last_sep_char_pos != -1:
-      input_str = input_str[0:last_sep_char_pos]
+      input_str = input_str[:last_sep_char_pos]
 
   return input_str
 

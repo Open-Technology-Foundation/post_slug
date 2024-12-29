@@ -27,12 +27,11 @@ function post_slug($input_str, $sep_char = "-", $preserve_case = false, $max_len
   $sep_char = $sep_char[0];
 
   // Kludges to increase cross-platform output similarity
-  $input_str = str_replace('–', '-', $input_str);
-  $input_str = str_replace('â�¹', 'Rs', $input_str);
-  $input_str = str_replace(['½', '¼', '�'], $sep_char, $input_str);
-  $input_str = str_replace(' & ', ' and ', $input_str);
-
-  $input_str = str_replace('ʾ', '', $input_str);
+  $kludge_replacements = [
+    '–' => '-', 'â�¹' => 'Rs', '½' => $sep_char, '¼' => $sep_char, '�' => $sep_char,
+    ' & ' => ' and ', 'ʾ' => ''
+  ];
+  $input_str = str_replace(array_keys($kludge_replacements), array_values($kludge_replacements), $input_str);
 
   // Remove all HTML entities
   $input_str = preg_replace('/&[^ \t]*;/', $sep_char, $input_str);
