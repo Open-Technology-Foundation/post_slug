@@ -1,0 +1,34 @@
+#!/bin/bash
+set -euo pipefail
+
+postslug=/ai/scripts/lib/post_slug/post_slug.bash
+#  local input_str="${1:-}" sep_char="${2:--}" 
+#  local -i preserve_case=${3:-0} max_len=${4:-0} stop_words=${5:-0}
+
+Dir="${1:-$PWD}"
+Dir="$(readlink -en -- "$Dir")"
+
+echo "WARNING: ALL files in $Dir will be post slugged!" 
+read -r -p "Proceed? y/n " yn
+[[ $yn == y ]] || exit 1
+
+declare -a Files
+
+readarray -t Files < <(find "$Dir" -type f)
+
+for file in "${Files[@]}"; do
+  dirname=$(dirname -- "$file")
+  ext="${file##*.}"
+  newfile=$(basename -s "$ext" -- "$file")
+  
+  newfile="$dirname"/"$("$postslug" "$newfile" - 1 70 1)"."$ext"
+
+  if [[ $newfile != "$file" ]]; then
+    echo "$file"
+    echo "$newfile"
+    echo
+    mv "$file" "$newfile" || true
+  fi
+done
+
+#fin
