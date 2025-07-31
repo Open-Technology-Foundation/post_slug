@@ -1,5 +1,24 @@
 #!/bin/bash
-
+#
+# post_slug - Convert strings into URL or filename-friendly slugs
+#
+# Version: 1.0.1
+# 
+# Changelog:
+# 1.0.1 - Added 255 character input limit, fixed HTML entity handling to use sep_char,
+#         added error handling for iconv failures.
+# 1.0.0 - Initial release
+#
+# This function performs multiple transformations:
+# - Limits input to 255 characters for filesystem compatibility
+# - Replaces HTML entities with separator character
+# - Converts characters to ASCII via iconv transliteration
+# - Removes quotes, apostrophes, and backticks
+# - Converts to lowercase unless preserve_case is set
+# - Replaces non-alphanumeric characters with separator
+# - Removes consecutive separators
+# - Returns empty on iconv failure for safe error handling
+#
 post_slug() {
   shopt -s extglob
   local input_str="${1:-}" sep_char="${2:--}" 
@@ -8,18 +27,24 @@ post_slug() {
   # Empty `sep_char` not permitted.
   [[ -z "$sep_char" ]] && sep_char='-'
   sep_char=${sep_char:0:1}
+  
+  # Limit input to 255 characters
+  if (( ${#input_str} > 255 )); then
+    input_str="${input_str:0:255}"
+  fi
 
   # Kludges to increase cross platform output similarity.
   input_str=$(echo "$input_str" | sed -e 's/—/-/g' -e 's/â�¹/Rs/g' -e 's/�/-/g' \
                                       -e "s/½/$sep_char/g" -e "s/¼/$sep_char/g" \
-                                      -e 's/ \& / and /g' -e 's/★/ /g' -e "s/\?/$sep_char/g")
+                                      -e 's/ \& / and /g' -e 's/★/ /g' -e "s/\?/$sep_char/g" \
+                                      -e 's/€/EUR/g' -e 's/©/C/g' -e 's/®/R/g' -e 's/™/-TM/g')
 
   # Remove all HTML entities
-  #input_str=$(echo "$input_str" | sed -e 's/&[^[:blank:]]*;/ /g')
-	input_str="${input_str//&*;/ }"
+  # Using sed as bash parameter expansion doesn't support complex patterns
+  input_str=$(echo "$input_str" | sed -e "s/&[^[:space:]]*;/$sep_char/g")
 
   # Force all characters in `input_str` to ASCII (or closest representation).
-  input_str=$(echo "$input_str" | iconv -f utf-8 -t ASCII//TRANSLIT)
+  input_str=$(echo "$input_str" | iconv -f utf-8 -t ASCII//TRANSLIT 2>/dev/null) || return
   input_str=${input_str//\?/}
 
   # Remove quotes, apostrophes, and backticks.
@@ -64,21 +89,23 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 post_slug: Converts a given string into a URL or filename-friendly slug.
 
 This script serves as a utility for string transformation into slugs suitable for 
-URLs or filenames. It replaces specific characters, removes HTML entities, normalizes
-to ASCII, removes quotes, and performs various other transformations.
+URLs or filenames. It replaces specific characters, replaces HTML entities with
+the separator character, normalizes to ASCII, removes quotes, and performs various
+other transformations. Input is automatically limited to 255 characters for
+filesystem compatibility.
 
 Globals:
   None
 
 Arguments:
-  input_str: The string to convert.
+  input_str: The string to convert. Automatically truncated to 255 characters.
   sep_char: Character to replace non-alphanumeric characters. Default '-'.
   preserve_case: Whether to preserve case. Default 0 (0=force lowercase).
-  max_len: Maximum length of the output. Default 0 (0=no limit).
+  max_len: Maximum length of the output. Default 0 (0=no limit beyond 255 char input limit).
   stop_words: Execute stopwords on the input string. Default 0.
 
 Returns:
-  Transformed slug string.
+  Transformed slug string, or empty string on error (e.g., iconv failure).
 
 Depends: 
   iconv

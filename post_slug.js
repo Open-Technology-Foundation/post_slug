@@ -4,18 +4,27 @@
  * 
  * The `post_slug` function provides a utility for converting a given string into a URL or filename-friendly slug.
  * 
+ * - Limits input to 255 characters to ensure filesystem compatibility.
+ * - Replaces all HTML entities with `sepChar`.
  * - Forces all characters in `inputStr` to ASCII (or closest representation).
  * - Removes quotes, apostrophes, and backticks.
  * - Forces to lowercase if not `preserveCase`.
  * - Replaces all non-alphanumeric characters with `sepChar`.
  * - Removes all repetitions of `sepChar`.
  * - Strips `sepChar` from ends of string.
+ * - Returns empty string on any error for safe failure handling.
  * 
- * @param {string} inputStr - The string to be converted into a slug.
- * @param {string} sepChar - The character to replace non-alphanumeric characters.
- * @param {boolean} preserveCase - Whether to retain the original case of the string.
- * @param {number} maxLen - The maximum length for the slug.
- * @returns {string} - The resulting slug.
+ * @param {string} inputStr - The string to be converted into a slug. Automatically truncated to 255 characters.
+ * @param {string} sepChar - The character to replace non-alphanumeric characters (default: '-').
+ * @param {boolean} preserveCase - Whether to retain the original case of the string (default: false).
+ * @param {number} maxLen - The maximum length for the slug (default: 0 = no limit beyond 255 char input limit).
+ * @returns {string} - The resulting slug, or empty string on error.
+ * 
+ * @version 1.0.1
+ * @changelog
+ * 1.0.1 - Added 255 character input limit, fixed HTML entity handling, 
+ *         improved regex escaping, added try-catch error handling.
+ * 1.0.0 - Initial release
  */
 
 /**
@@ -53,14 +62,23 @@ const multiCharReplacements = {
   'æ': 'ae',
   'â�¹': 'Rs',
   '�': '-',
+  '€': 'EUR',  // Euro symbol - match iconv transliteration
+  '©': 'C',    // Copyright symbol
+  '®': 'R',    // Registered trademark
 };
 
 function post_slug(inputStr, sepChar = "-", preserveCase = false, maxLen = 0) {
-  // Handle empty replacement character
-  if (sepChar == '') sepChar = '-';
-  sepChar = sepChar[0]
-  
-  // Kludges to increase cross platform slug similiarity.
+  try {
+    // Handle empty replacement character
+    if (sepChar == '') sepChar = '-';
+    sepChar = sepChar[0]
+    
+    // Limit input to 255 characters
+    if (inputStr.length > 255) {
+      inputStr = inputStr.substring(0, 255);
+    }
+    
+    // Kludges to increase cross platform slug similiarity.
     /**
      * Apply single-character replacements
      */
@@ -77,7 +95,7 @@ function post_slug(inputStr, sepChar = "-", preserveCase = false, maxLen = 0) {
   }
 
   // Remove all HTML entities.
-  inputStr = inputStr.replace(/&[^ \t]*;/g, '');
+  inputStr = inputStr.replace(/&[^ \t]*;/g, sepChar);
   
   // Force all characters in `input_str` to ASCII (or closest representation).
   inputStr = inputStr.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
@@ -92,7 +110,7 @@ function post_slug(inputStr, sepChar = "-", preserveCase = false, maxLen = 0) {
   inputStr = inputStr.replace(/[^a-zA-Z0-9]/g, sepChar);
   
   // Escape special characters in sepChar
-  const escapedSepChar = sepChar.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escapedSepChar = sepChar.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
   
   /* Return only valid alpha-numeric chars and the `sep_char` char, 
      replacing all other chars with the `sep_char` char, 
@@ -112,7 +130,10 @@ function post_slug(inputStr, sepChar = "-", preserveCase = false, maxLen = 0) {
       inputStr = inputStr.substring(0, lastSepCharPos);
     }
   }
-  return inputStr;
+    return inputStr;
+  } catch (e) {
+    return "";
+  }
 }
 
 //fin

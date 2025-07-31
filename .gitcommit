@@ -1,0 +1,16 @@
+#!/bin/bash
+set -euo pipefail
+
+cd /ai/scripts/lib/post_slug
+
+chown -R sysadmin:sysadmin -- *
+cln -N || true
+
+ver="$(python3 -c 'import post_slug; print(post_slug.__version__)')"
+
+sudo git add .
+sudo git commit -m "${1:-update ${ver}}"
+sudo git push
+
+#fin
+

@@ -1,0 +1,95 @@
+# Edge Cases Test Dataset for post_slug
+# Tests 255 character limit, HTML entities, special characters, and error scenarios
+
+# Basic HTML entities
+Barnes &amp; Noble
+AT&amp;T Corporation
+Rock &amp; Roll
+&lt;script&gt;alert('test')&lt;/script&gt;
+&quot;Quoted Text&quot;
+&apos;Apostrophe&apos;
+Multiple &amp; HTML &nbsp; entities &copy; test
+
+# 255 character strings (exactly at limit)
+Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua Ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat Duis aute irure dolor in
+12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567
+
+# Over 255 characters (should be truncated)
+Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua Ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat Duis aute irure dolor in reprehenderit
+This is a very long string that exceeds 255 characters and should be truncated by the slug function to ensure filesystem compatibility across all platforms Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+
+# Special separator characters that need escaping
+Test with . period separator
+Test with * asterisk separator
+Test with + plus separator
+Test with ? question separator
+Test with ^ caret separator
+Test with $ dollar separator
+Test with { brace separator
+Test with | pipe separator
+Test with [ bracket separator
+Test with \ backslash separator
+
+# Empty and whitespace strings
+   
+		
+                              
+
+# Strings with only special characters
+!!!@@@###$$$%%%^^^&&&***((()))
+<>?:"{}|[]\\`;',./
+♠♣♥♦♪♫♯♭
+
+# Mixed encoding and special cases
+Café con Leché €5.50
+¡Hola! ¿Cómo estás?
+Björk's Café
+naïve résumé
+"Smart quotes" and 'curly apostrophes'
+Em—dash and en–dash test
+Ellipsis… test
+™ © ® symbols test
+
+# Non-Latin scripts (should result in empty or partial slugs)
+Привет мир
+你好世界
+مرحبا بالعالم
+こんにちは世界
+Здравствуй, мир!
+
+# Edge cases with multiple separators
+Multiple---dashes---test
+Mixed___separators---test___
+Leading---and trailing---
+___Leading and trailing___
+
+# Real-world problematic titles
+COVID-19: A Global Pandemic's Impact
+3.14159... The Story of π
+100% Pure & Natural™
+24/7 Support @ Your Service!
+#HashtagsEverywhere #NoSpaces
+user@example.com email test
+https://www.example.com/test URL test
+C:\Windows\System32 path test
+$100,000.00 currency test
+
+# Strings that might cause regex issues
+(((nested))) parentheses
+[[[nested]]] brackets
+{{{nested}}} braces
+a*b+c?d.e regex chars
+^start$ and end$
+
+# Very short strings
+a
+1
+-
+_
+.
+
+# Mixed case preservation tests
+iPhone iPad and iPod
+McDonald's Restaurant
+JavaScript vs ECMAScript
+PhD in CS from MIT

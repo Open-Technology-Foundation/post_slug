@@ -6,20 +6,22 @@ This module provides a utility function `post_slug` for converting a given strin
 
 The function performs multiple transformations to ensure the resulting slug is readable and safe for use in URLs or filenames. Specifically, it:
 
+  - Limits input to 255 characters to ensure filesystem compatibility.
   - Replaces certain platform-specific characters with the separator character.
-  - Removes all HTML entities.
+  - Replaces all HTML entities with the separator character.
   - Converts all characters to ASCII (or the closest representation).
   - Removes quotes, apostrophes, and backticks.
   - Converts the string to lowercase unless specified otherwise.
   - Retains only valid alphanumeric characters, replacing others with a separator character.
   - Optionally truncates the string to a maximum length, cutting off at the last separator character.
+  - Returns empty string on any error for safe failure handling.
 
 ### Parameters:
 
-    - `input_str` (str): The string to be converted into a slug.
+    - `input_str` (str): The string to be converted into a slug. Automatically truncated to 255 characters.
     - `sep_char` (str, optional): The character used to replace non-alphanumeric characters. Default is '-'.
     - `preserve_case` (bool, optional): If True, retains the original case of the string. Default is False.
-    - `max_len` (int, optional): Maximum length for the resulting string. Default is 0, which means no limit.
+    - `max_len` (int, optional): Maximum length for the resulting string. Default is 0, which means no limit (beyond the 255 char input limit).
 
 ### Returns:
 
@@ -104,6 +106,9 @@ multi_char_replacements = {
   'æ': 'ae',
   'â�¹': 'Rs',
   '�': '-',
+  '€': 'EUR',  # Euro symbol - match iconv transliteration
+  '©': 'C',    # Copyright symbol
+  '®': 'R',    # Registered trademark
 }
 
 # Precompile regular expressions
@@ -156,47 +161,60 @@ def post_slug(input_str: str, sep_char: str = '-',
 
   Version:
   --------
-  1.0.0
+  1.0.1
+  
+  Changelog:
+  ----------
+  1.0.1 - Added 255 character input limit, standardized HTML entity handling,
+          added error handling with try-except block.
+  1.0.0 - Initial release
   """
-  # Empty `sep_char` not permitted.
-  if sep_char == '': sep_char = '-'
-  sep_char = sep_char[0]
+  try:
+    # Empty `sep_char` not permitted.
+    if sep_char == '': sep_char = '-'
+    sep_char = sep_char[0]
+    
+    # Limit input to 255 characters
+    if len(input_str) > 255:
+      input_str = input_str[:255]
 
-  # Kludges to increase cross platform output similarity.
-  # Apply single-character replacements using str.translate()
-  input_str = input_str.translate(translation_table)
+    # Kludges to increase cross platform output similarity.
+    # Apply single-character replacements using str.translate()
+    input_str = input_str.translate(translation_table)
 
-  # Apply multi-character replacements using a single regex substitution
-  input_str = re.sub('|'.join(re.escape(key) for key in multi_char_replacements.keys()),
-                     lambda m: multi_char_replacements[m.group(0)], input_str)
+    # Apply multi-character replacements using a single regex substitution
+    input_str = re.sub('|'.join(re.escape(key) for key in multi_char_replacements.keys()),
+                       lambda m: multi_char_replacements[m.group(0)], input_str)
 
-  # Remove all HTML entities.
-  input_str = ps_html_entity_re.sub(sep_char, input_str)
+    # Remove all HTML entities.
+    input_str = ps_html_entity_re.sub(sep_char, input_str)
 
-  # Force all characters in `input_str` to ASCII (or closest representation).
-  input_str = unicodedata.normalize('NFKD', input_str).encode('ASCII', 'ignore').decode()
+    # Force all characters in `input_str` to ASCII (or closest representation).
+    input_str = unicodedata.normalize('NFKD', input_str).encode('ASCII', 'ignore').decode()
 
-  # Remove quotes, apostrophes, and backticks.
-  input_str = ps_quotes_re.sub('', input_str)
+    # Remove quotes, apostrophes, and backticks.
+    input_str = ps_quotes_re.sub('', input_str)
 
-  # Force to lowercase if not preserve_case.
-  if not preserve_case:
-    input_str = input_str.lower()
+    # Force to lowercase if not preserve_case.
+    if not preserve_case:
+      input_str = input_str.lower()
 
-  # Return only valid alpha-numeric chars and the `sep_char` char,
-  # replacing all other chars with the `sep_char` char,
-  # then removing all repetitions of `sep_char` within the string,
-  # and stripping `sep_char` from ends of the string.
-  input_str = ps_non_alnum_re.sub(sep_char, input_str).strip(sep_char)
+    # Return only valid alpha-numeric chars and the `sep_char` char,
+    # replacing all other chars with the `sep_char` char,
+    # then removing all repetitions of `sep_char` within the string,
+    # and stripping `sep_char` from ends of the string.
+    input_str = ps_non_alnum_re.sub(sep_char, input_str).strip(sep_char)
 
-  # If max_len > 0, then check for overlength string,
-  # and truncate on last sep_char.
-  if max_len and len(input_str) > max_len:
-    input_str = input_str[:max_len]
-    last_sep_char_pos = input_str.rfind(sep_char)
-    if last_sep_char_pos != -1:
-      input_str = input_str[:last_sep_char_pos]
+    # If max_len > 0, then check for overlength string,
+    # and truncate on last sep_char.
+    if max_len and len(input_str) > max_len:
+      input_str = input_str[:max_len]
+      last_sep_char_pos = input_str.rfind(sep_char)
+      if last_sep_char_pos != -1:
+        input_str = input_str[:last_sep_char_pos]
 
-  return input_str
+    return input_str
+  except Exception:
+    return ""
 
 #fin

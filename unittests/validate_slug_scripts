@@ -138,16 +138,6 @@ if [[ -n "$prg" ]]; then
 	Script_Types+=('bash')
 	Script_Templates['bash']="#!/usr/bin/env $prg"'
 --MODULE--
-
-# If the script is being run directly, execute the function
-if [[ "$0" != "-bash" && "$0" != "bash" ]]; then
-  if [[ "$#" -eq 0 ]]; then
-    echo "Usage: $(basename $0) "string to slugify" [separator character] [preserve case] [max length]"
-    exit 1
-  fi
-  post_slug "$@"
-  echo ""
-fi
 '
 else
 	echo >&2 "Program 'bash' not found. Module post_slug.bash will not be tested."
