@@ -182,6 +182,23 @@ echo $(post_slug "Über die Universitäts-Philosophie  — Arthur Schopenhauer, 
 ```
 
 
+## Installation Notes
+
+### Command-line Usage
+
+For convenience, you may want to create symlinks to use post_slug as a command-line tool:
+
+```bash
+# Create symlinks for bash command-line usage
+ln -s post_slug.bash post_slug
+ln -s post_slug.bash postslug
+
+# For file renaming utility
+ln -s slug-files rename-files-to-slug
+```
+
+This allows you to use `post_slug "Your Text"` directly from the command line.
+
 ## Contributing
 
 Feel free to submit pull requests or open issues to improve the code or documentation in this package.  Bear in mind that changes to code in one module may necessitate changes to the other modules.
