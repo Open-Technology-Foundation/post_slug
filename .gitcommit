@@ -1,16 +1,49 @@
 #!/bin/bash
+# Git commit helper for post_slug project
+# Usage: ./.gitcommit [commit message]
+
 set -euo pipefail
 
-cd /ai/scripts/lib/post_slug
+# Change to script directory
+cd "$(dirname "$0")"
 
-chown -R sysadmin:sysadmin -- *
-cln -N || true
+# Fix permissions if needed
+find . -type f -name "*.py" -o -name "*.js" -o -name "*.php" -o -name "*.bash" | xargs chmod 644 2>/dev/null || true
+find . -name "*.sh" -o -name "validate_slug_scripts" -o -name "slug-files" | xargs chmod 755 2>/dev/null || true
 
-ver="$(python3 -c 'import post_slug; print(post_slug.__version__)')"
+# Get current version
+ver="$(cat VERSION 2>/dev/null || echo 'unknown')"
 
-sudo git add .
-sudo git commit -m "${1:-update ${ver}}"
-sudo git push
+# Check git status
+if [[ -z $(git status --porcelain) ]]; then
+  echo "No changes to commit"
+  exit 0
+fi
+
+# Show what will be committed
+echo "Current changes:"
+git status --short
+echo
+
+commit_msg="${1:-update $ver}"
+
+# Stage changes (let user control what to add)
+echo "Staging changes..."
+git add -A
+
+# Commit
+git commit -m "$commit_msg"
+
+# Ask before pushing
+current_branch=$(git branch --show-current)
+echo "Pushing to origin/$current_branch..."
+git push origin "$current_branch"
+  
+# Check if we should push tags
+if git describe --exact-match HEAD 2>/dev/null; then
+  git push --tags
+fi
+
+echo "Done!"
 
 #fin
-
