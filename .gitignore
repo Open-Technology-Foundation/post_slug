@@ -110,6 +110,7 @@ temp/
 *~
 ~*
 .symlink
+release.sh
 
 # Generated test scripts
 unittests/_post_slug.*
