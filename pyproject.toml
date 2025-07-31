@@ -4,11 +4,19 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "post_slug"
+version = "1.0.1"
 authors = [{name = "Gary Dean", email = "garydean@okusi.id"}]
+description = "Cross-language slug generator for URL-safe and filename-safe strings"
 readme = "README.md"
 license = {file = "LICENSE"}
-classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
-dynamic = ["version", "description"]
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.10"
 
 [project.urls]
 Home = "https://github.com/Open-Technology-Foundation/post_slug"
