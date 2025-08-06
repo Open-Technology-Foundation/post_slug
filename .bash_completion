@@ -1,0 +1,47 @@
+#!/bin/bash
+# Bash completion for slug and slug-files commands
+
+_slug_completion() {
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    # Complete filenames for all arguments
+    COMPREPLY=( $(compgen -f -- "$cur") )
+    return 0
+}
+
+_slug_files_completion() {
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    opts="-s --sep_char -m --max-len -p --preserve-case -n --no-clobber -v --verbose -q --quiet -h --help"
+
+    case $prev in
+        -s|--sep_char)
+            # Complete with common separator characters
+            COMPREPLY=( $(compgen -W "- _ ." -- "$cur") )
+            return 0
+            ;;
+        -m|--max-len)
+            # Complete with common max lengths
+            COMPREPLY=( $(compgen -W "50 100 127 200 255" -- "$cur") )
+            return 0
+            ;;
+    esac
+
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
+        return 0
+    fi
+
+    # Complete filenames for file arguments
+    COMPREPLY=( $(compgen -f -- "$cur") )
+    return 0
+}
+
+complete -F _slug_completion slug
+complete -F _slug_files_completion slug-files
