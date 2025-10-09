@@ -1,10 +1,10 @@
-slug
 *~
 .*~
 ~*
 *$py.class
 AUDIT-EVALUATE.md
 *.bak
+BASH-CODING-STANDARD.md
 build/
 .cache
 CHANGES.md
@@ -99,6 +99,7 @@ release.sh
 sdist/
 share/python-wheels/
 *.sln
+slug
 *.so
 *.spec
 .spyderproject

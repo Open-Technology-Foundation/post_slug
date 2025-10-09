@@ -3,10 +3,11 @@
 # post_slug - Convert strings into URL or filename-friendly slugs
 #
 # Version: 1.0.1
-# 
+#
 # Changelog:
 # 1.0.1 - Added 255 character input limit, fixed HTML entity handling to use sep_char,
-#         added error handling for iconv failures.
+#         added error handling for iconv failures, replaced unsafe echo with printf,
+#         removed unused stop_words parameter and extglob.
 # 1.0.0 - Initial release
 #
 # This function performs multiple transformations:
@@ -20,9 +21,8 @@
 # - Returns empty on iconv failure for safe error handling
 #
 post_slug() {
-  shopt -s extglob
-  local input_str="${1:-}" sep_char="${2:--}" 
-  local -i preserve_case=${3:-0} max_len=${4:-0} stop_words=${5:-0}
+  local input_str="${1:-}" sep_char="${2:--}"
+  local -i preserve_case=${3:-0} max_len=${4:-0}
 	
   # Empty `sep_char` not permitted.
   [[ -z "$sep_char" ]] && sep_char='-'
@@ -34,17 +34,18 @@ post_slug() {
   fi
 
   # Kludges to increase cross platform output similarity.
-  input_str=$(echo "$input_str" | sed -e 's/—/-/g' -e 's/â�¹/Rs/g' -e 's/�/-/g' \
-                                      -e "s/½/$sep_char/g" -e "s/¼/$sep_char/g" \
-                                      -e 's/ \& / and /g' -e 's/★/ /g' -e "s/\?/$sep_char/g" \
-                                      -e 's/€/EUR/g' -e 's/©/C/g' -e 's/®/R/g' -e 's/™/-TM/g')
+  input_str=$(printf '%s\n' "$input_str" | \
+      sed -e 's/—/-/g' -e 's/â�¹/Rs/g' -e 's/�/-/g' \
+          -e "s/½/$sep_char/g" -e "s/¼/$sep_char/g" \
+          -e 's/ \& / and /g' -e 's/★/ /g' -e "s/?/$sep_char/g" \
+          -e 's/€/EUR/g' -e 's/©/C/g' -e 's/®/R/g' -e 's/™/-TM/g')
 
   # Remove all HTML entities
   # Using sed as bash parameter expansion doesn't support complex patterns
-  input_str=$(echo "$input_str" | sed -e "s/&[^[:space:]]*;/$sep_char/g")
+  input_str=$(printf '%s\n' "$input_str" | sed -e "s/&[^[:space:]]*;/$sep_char/g")
 
   # Force all characters in `input_str` to ASCII (or closest representation).
-  input_str=$(echo "$input_str" | iconv -f utf-8 -t ASCII//TRANSLIT 2>/dev/null) || return
+  input_str=$(printf '%s\n' "$input_str" | iconv -f utf-8 -t ASCII//TRANSLIT 2>/dev/null) || return
   input_str=${input_str//\?/}
 
   # Remove quotes, apostrophes, and backticks.
@@ -52,11 +53,6 @@ post_slug() {
 
   # Optionally convert to lowercase.
   ((preserve_case)) || input_str="${input_str,,}"
-
-#	((stop_words)) && {
-#		>&2 declare -p input_str
-#		input_str="$(stopwords "$input_str")"
-#  }
 
   # Replace all non-alphanumeric characters with {sep_char}.
   #input_str=$(echo "$input_str" | sed -e "s/[^a-zA-Z0-9]/$sep_char/g")
@@ -100,25 +96,33 @@ Globals:
 Arguments:
   input_str: The string to convert. Automatically truncated to 255 characters.
   sep_char: Character to replace non-alphanumeric characters. Default '-'.
-  preserve_case: Whether to preserve case. Default 0 (0=force lowercase).
+  preserve_case: Whether to preserve case. Default 0 (0=force lowercase, 1=preserve).
   max_len: Maximum length of the output. Default 0 (0=no limit beyond 255 char input limit).
-  stop_words: Execute stopwords on the input string. Default 0.
 
 Returns:
   Transformed slug string, or empty string on error (e.g., iconv failure).
 
-Depends: 
+Depends:
   iconv
 
-Example:
+Examples:
   post_slug 'Hello, World!'
-  post_slug 'Hello, World!' '_' true
+  	# Output: "hello-world"
+
+  post_slug 'Hello, World!' '_'
+  	# Output: "hello_world"
+
+  post_slug 'Hello, World!' '-' 1
+  	# Output: "Hello-World"
+
   post_slug 'A title, with Ŝtřãņġę cHaracters ()'
   	# Output: "a-title-with-strange-characters"
-  post_slug ' A title, with Ŝtřãņġę cHaracters ()' "_" 1
+
+  post_slug 'A title, with Ŝtřãņġę cHaracters ()' "_" 1
   	# Output: "A_title_with_strange_characters"
-  post_slug ' A title, with Ŝtřãņġę cHaracters ()' "_" 1 1 
-  	# Output: "title_strange_characters"
+
+  post_slug 'This is a very long title that needs truncation' '-' 0 20
+  	# Output: "this-is-a-very-long"
 
 EOT
 		exit "${1:-0}"
