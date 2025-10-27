@@ -1,16 +1,7 @@
 #!/bin/bash
-#
 # post_slug - Convert strings into URL or filename-friendly slugs
 #
-# Version: 1.0.1
-#
-# Changelog:
-# 1.0.1 - Added 255 character input limit, fixed HTML entity handling to use sep_char,
-#         added error handling for iconv failures, replaced unsafe echo with printf,
-#         removed unused stop_words parameter and extglob.
-# 1.0.0 - Initial release
-#
-# This function performs multiple transformations:
+# Performs multiple transformations:
 # - Limits input to 255 characters for filesystem compatibility
 # - Replaces HTML entities with separator character
 # - Converts characters to ASCII via iconv transliteration
@@ -20,18 +11,19 @@
 # - Removes consecutive separators
 # - Returns empty on iconv failure for safe error handling
 #
+
 post_slug() {
-  local input_str="${1:-}" sep_char="${2:--}"
+  local -- input_str="${1:-}" sep_char="${2:--}"
   local -i preserve_case=${3:-0} max_len=${4:-0}
-	
+
+  ((${#input_str})) || { echo ''; return 0; }
+
   # Empty `sep_char` not permitted.
-  [[ -z "$sep_char" ]] && sep_char='-'
+  [[ -n "$sep_char" ]] || sep_char='-'
   sep_char=${sep_char:0:1}
   
   # Limit input to 255 characters
-  if (( ${#input_str} > 255 )); then
-    input_str="${input_str:0:255}"
-  fi
+  ((${#input_str} < 256)) || input_str="${input_str:0:255}"
 
   # Kludges to increase cross platform output similarity.
   input_str=$(printf '%s\n' "$input_str" | \
@@ -56,13 +48,13 @@ post_slug() {
 
   # Replace all non-alphanumeric characters with {sep_char}.
   #input_str=$(echo "$input_str" | sed -e "s/[^a-zA-Z0-9]/$sep_char/g")
-	input_str=$(tr -c 'a-zA-Z0-9' "$sep_char" <<< "$input_str")
+  input_str=$(tr -c 'a-zA-Z0-9' "$sep_char" <<< "$input_str")
 
   # Replace all multiple occurrences of {sep_char} with a single {sep_char}.
   #input_str=$(echo "$input_str" | sed -e "s/$sep_char\{2,\}/$sep_char/g")
-	while [[ "$input_str" == *"$sep_char"$sep_char* ]]; do
-  	input_str="${input_str//"$sep_char"$sep_char/$sep_char}"
-	done
+  while [[ "$input_str" == *"$sep_char"$sep_char* ]]; do
+    input_str="${input_str//"$sep_char"$sep_char/$sep_char}"
+  done
 
   # Remove leading and trailing {sep_char}.
   input_str="${input_str#"${sep_char}"}"
@@ -78,20 +70,21 @@ post_slug() {
 }
 declare -fx post_slug
 
-# Only run main if the script is being executed directly (not sourced)
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-	post_slug_usage() {
-		cat <<-'EOT'
-post_slug: Converts a given string into a URL or filename-friendly slug.
+# Exit if script being executed directly (not sourced)
+[[ "${BASH_SOURCE[0]}" == "${0}" ]] || return 0
 
-This script serves as a utility for string transformation into slugs suitable for 
-URLs or filenames. It replaces specific characters, replaces HTML entities with
-the separator character, normalizes to ASCII, removes quotes, and performs various
-other transformations. Input is automatically limited to 255 characters for
+#!/bin/bash #semantic ---------------------------------------------------------
+set -euo pipefail
+
+show_help() {
+  cat <<-'EOT'
+post_slug - Converts a given string into a URL or filename-friendly slug.
+
+Utility for string transformation into slugs suitable for URLs or filenames.
+It replaces specific characters, replaces HTML entities with the separator
+character, normalizes to ASCII, removes quotes, and performs various other
+transformations. Input is automatically limited to 255 characters for
 filesystem compatibility.
-
-Globals:
-  None
 
 Arguments:
   input_str: The string to convert. Automatically truncated to 255 characters.
@@ -107,32 +100,27 @@ Depends:
 
 Examples:
   post_slug 'Hello, World!'
-  	# Output: "hello-world"
+    # Output: "hello-world"
 
   post_slug 'Hello, World!' '_'
-  	# Output: "hello_world"
+    # Output: "hello_world"
 
   post_slug 'Hello, World!' '-' 1
-  	# Output: "Hello-World"
+    # Output: "Hello-World"
 
   post_slug 'A title, with Ŝtřãņġę cHaracters ()'
-  	# Output: "a-title-with-strange-characters"
+    # Output: "a-title-with-strange-characters"
 
   post_slug 'A title, with Ŝtřãņġę cHaracters ()' "_" 1
-  	# Output: "A_title_with_strange_characters"
+    # Output: "A_title_with_strange_characters"
 
   post_slug 'This is a very long title that needs truncation' '-' 0 20
-  	# Output: "this-is-a-very-long"
+    # Output: "this-is-a-very-long"
 
 EOT
-		exit "${1:-0}"
-	}
+}
 
-  set -euo pipefail
-	[[ "${1:-}" == '-h' || "${1:-}" == '--help' ]] && post_slug_usage 0
-  post_slug "$@"
-else
-  true
-fi
+[[ "${1:-}" == '-h' || "${1:-}" == '--help' ]] && { show_help; exit 0; }
 
+post_slug "$@"
 #fin
