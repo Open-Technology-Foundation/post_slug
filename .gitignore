@@ -143,3 +143,4 @@ venv.bak/
 wheels/
 yarn-debug.log*
 yarn-error.log*
+.git.add.commit.push
