@@ -1,16 +1,7 @@
 #!/bin/bash
-# post_slug - Convert strings into URL or filename-friendly slugs
-#
-# Performs multiple transformations:
-# - Limits input to 255 characters for filesystem compatibility
-# - Replaces HTML entities with separator character
-# - Converts characters to ASCII via iconv transliteration
-# - Removes quotes, apostrophes, and backticks
-# - Converts to lowercase unless preserve_case is set
-# - Replaces non-alphanumeric characters with separator
-# - Removes consecutive separators
-# - Returns empty on iconv failure for safe error handling
-#
+# post_slug - Convert strings into URL/filename-friendly ASCII slugs
+# Transliterates to ASCII, removes special chars, normalizes separators
+# Returns empty string on error for safe handling
 
 post_slug() {
   local -- input_str="${1:-}" sep_char="${2:--}"
@@ -18,11 +9,8 @@ post_slug() {
 
   ((${#input_str})) || { echo ''; return 0; }
 
-  # Empty `sep_char` not permitted.
   [[ -n "$sep_char" ]] || sep_char='-'
   sep_char=${sep_char:0:1}
-  
-  # Limit input to 255 characters
   ((${#input_str} < 256)) || input_str="${input_str:0:255}"
 
   # Kludges to increase cross platform output similarity.
@@ -32,31 +20,20 @@ post_slug() {
           -e 's/ \& / and /g' -e 's/★/ /g' -e "s/?/$sep_char/g" \
           -e 's/€/EUR/g' -e 's/©/C/g' -e 's/®/R/g' -e 's/™/-TM/g')
 
-  # Remove all HTML entities
-  # Using sed as bash parameter expansion doesn't support complex patterns
+  # Remove HTML entities
   input_str=$(printf '%s\n' "$input_str" | sed -e "s/&[^[:space:]]*;/$sep_char/g")
 
-  # Force all characters in `input_str` to ASCII (or closest representation).
+  # Force to ASCII via iconv
   input_str=$(printf '%s\n' "$input_str" | iconv -f utf-8 -t ASCII//TRANSLIT 2>/dev/null) || return
   input_str=${input_str//\?/}
-
-  # Remove quotes, apostrophes, and backticks.
   input_str="${input_str//[\`\'\"’´]}"
 
-  # Optionally convert to lowercase.
   ((preserve_case)) || input_str="${input_str,,}"
-
-  # Replace all non-alphanumeric characters with {sep_char}.
-  #input_str=$(echo "$input_str" | sed -e "s/[^a-zA-Z0-9]/$sep_char/g")
   input_str=$(tr -c 'a-zA-Z0-9' "$sep_char" <<< "$input_str")
 
-  # Replace all multiple occurrences of {sep_char} with a single {sep_char}.
-  #input_str=$(echo "$input_str" | sed -e "s/$sep_char\{2,\}/$sep_char/g")
   while [[ "$input_str" == *"$sep_char"$sep_char* ]]; do
     input_str="${input_str//"$sep_char"$sep_char/$sep_char}"
   done
-
-  # Remove leading and trailing {sep_char}.
   input_str="${input_str#"${sep_char}"}"
   input_str="${input_str%"${sep_char}"}"
 
@@ -70,52 +47,26 @@ post_slug() {
 }
 declare -fx post_slug
 
-# Exit if script being executed directly (not sourced)
 [[ "${BASH_SOURCE[0]}" == "${0}" ]] || return 0
 
-#!/bin/bash #semantic ---------------------------------------------------------
 set -euo pipefail
 
 show_help() {
   cat <<-'EOT'
-post_slug - Converts a given string into a URL or filename-friendly slug.
+post_slug - Convert strings into URL/filename-friendly ASCII slugs
 
-Utility for string transformation into slugs suitable for URLs or filenames.
-It replaces specific characters, replaces HTML entities with the separator
-character, normalizes to ASCII, removes quotes, and performs various other
-transformations. Input is automatically limited to 255 characters for
-filesystem compatibility.
+Usage: post_slug <input_str> [sep_char] [preserve_case] [max_len]
 
 Arguments:
-  input_str: The string to convert. Automatically truncated to 255 characters.
-  sep_char: Character to replace non-alphanumeric characters. Default '-'.
-  preserve_case: Whether to preserve case. Default 0 (0=force lowercase, 1=preserve).
-  max_len: Maximum length of the output. Default 0 (0=no limit beyond 255 char input limit).
-
-Returns:
-  Transformed slug string, or empty string on error (e.g., iconv failure).
-
-Depends:
-  iconv
+  input_str      String to convert (max 255 chars)
+  sep_char       Separator character (default: '-')
+  preserve_case  0=lowercase, 1=preserve (default: 0)
+  max_len        Max output length, 0=unlimited (default: 0)
 
 Examples:
-  post_slug 'Hello, World!'
-    # Output: "hello-world"
-
-  post_slug 'Hello, World!' '_'
-    # Output: "hello_world"
-
-  post_slug 'Hello, World!' '-' 1
-    # Output: "Hello-World"
-
-  post_slug 'A title, with Ŝtřãņġę cHaracters ()'
-    # Output: "a-title-with-strange-characters"
-
-  post_slug 'A title, with Ŝtřãņġę cHaracters ()' "_" 1
-    # Output: "A_title_with_strange_characters"
-
-  post_slug 'This is a very long title that needs truncation' '-' 0 20
-    # Output: "this-is-a-very-long"
+  post_slug 'Hello, World!'           # hello-world
+  post_slug 'Hello, World!' '_' 1     # Hello_World
+  post_slug 'Long title here' '-' 0 8 # long
 
 EOT
 }
@@ -123,4 +74,3 @@ EOT
 [[ "${1:-}" == '-h' || "${1:-}" == '--help' ]] && { show_help; exit 0; }
 
 post_slug "$@"
-#fin
