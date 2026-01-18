@@ -4,13 +4,13 @@
 set -euo pipefail
 
 # Check if version argument provided
-if [ $# -ne 1 ]; then
+if (($#==0)); then
     echo "Usage: $0 <new_version>"
     echo "Example: $0 1.0.2"
     exit 1
 fi
 
-NEW_VERSION="$1"
+NEW_VERSION=$1
 
 # Validate version format (basic check)
 if ! [[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -56,11 +56,13 @@ echo "✓ Updated pyproject.toml"
 sed -i "s/\*\*Version\*\*: [0-9]\+\.[0-9]\+\.[0-9]\+/**Version**: $NEW_VERSION/" README.md
 echo "✓ Updated README.md"
 
-echo ""
+echo
 echo "Version updated to $NEW_VERSION in all files!"
-echo ""
+echo
 echo "Don't forget to:"
-echo "1. Update CHANGELOG.md with the new version details"
+echo '1. Update CHANGELOG.md with the new version details'
 echo "2. Commit the changes: git commit -am \"chore: bump version to $NEW_VERSION\""
 echo "3. Create a git tag: git tag -a v$NEW_VERSION -m \"Version $NEW_VERSION\""
 echo "4. Push the tag: git push origin v$NEW_VERSION"
+
+#fin

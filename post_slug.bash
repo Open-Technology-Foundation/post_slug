@@ -74,3 +74,4 @@ EOT
 [[ "${1:-}" == '-h' || "${1:-}" == '--help' ]] && { show_help; exit 0; }
 
 post_slug "$@"
+#fin
