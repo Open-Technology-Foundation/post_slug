@@ -59,7 +59,7 @@ while (($#)); do case $1 in
       VERBOSE=0 ;;
   -h|--help)
       show_help; exit 0 ;;
-  -[smpnvqh]*) #split up single options
+  -[smpnvqh]?*) #split up single options
       set -- "${1:0:2}" "-${1:2}" "${@:2}"; continue ;;
   -*) die 22 "Invalid option ${1@Q}" ;;
   *)  Files+=("$1") ;;
