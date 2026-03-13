@@ -14,22 +14,30 @@ post_slug() {
   ((${#input_str} < 256)) || input_str="${input_str:0:255}"
 
   # Kludges to increase cross platform output similarity.
-  input_str=$(printf '%s\n' "$input_str" | \
-      sed -e 's/—/-/g' -e 's/â�¹/Rs/g' -e 's/�/-/g' \
-          -e "s/½/$sep_char/g" -e "s/¼/$sep_char/g" \
-          -e 's/ \& / and /g' -e 's/★/ /g' -e "s/?/$sep_char/g" \
-          -e 's/€/EUR/g' -e 's/©/C/g' -e 's/®/R/g' -e 's/™/-TM/g')
+  input_str="${input_str//—/-}"
+  input_str="${input_str//â�¹/Rs}"
+  input_str="${input_str//�/-}"
+  input_str="${input_str//½/$sep_char}"
+  input_str="${input_str//¼/$sep_char}"
+  input_str="${input_str// & / and }"
+  input_str="${input_str//★/ }"
+  input_str="${input_str//[?]/$sep_char}"
+  input_str="${input_str//€/EUR}"
+  input_str="${input_str//©/C}"
+  input_str="${input_str//®/R}"
+  input_str="${input_str//™/-TM}"
 
   # Remove HTML entities
-  input_str=$(printf '%s\n' "$input_str" | sed -e "s/&[^[:space:]]*;/$sep_char/g")
+  [[ "$input_str" != *'&'*';'* ]] || \
+    input_str=$(sed "s/&[^[:space:]]*;/$sep_char/g" <<< "$input_str")
 
   # Force to ASCII via iconv
-  input_str=$(printf '%s\n' "$input_str" | iconv -f utf-8 -t ASCII//TRANSLIT 2>/dev/null) || return
+  input_str=$(iconv -f utf-8 -t ASCII//TRANSLIT <<< "$input_str" 2>/dev/null) || return
   input_str=${input_str//\?/}
   input_str="${input_str//[\`\'\"’´]}"
 
   ((preserve_case)) || input_str="${input_str,,}"
-  input_str=$(tr -c 'a-zA-Z0-9' "$sep_char" <<< "$input_str")
+  input_str="${input_str//[^a-zA-Z0-9]/$sep_char}"
 
   while [[ "$input_str" == *"$sep_char"$sep_char* ]]; do
     input_str="${input_str//"$sep_char"$sep_char/$sep_char}"
