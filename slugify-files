@@ -29,9 +29,10 @@ declare -- sep_char='-'
 declare -i preserve_case=0 max_len=0 clobber=1
 declare -- file dirname ext newfile
 
-source post_slug.bash 2>/dev/null || {
-  source "$SCRIPT_DIR"/post_slug.bash || die 1 "post_slug.bash not found in PATH or $SCRIPT_DIR"
-}
+source post_slug
+#.bash 2>/dev/null || {
+#  source "$SCRIPT_DIR"/post_slug.bash || die 1 "post_slug.bash not found in PATH or $SCRIPT_DIR"
+#}
 
 while (($#)); do case $1 in
   -s|--sep_char)
