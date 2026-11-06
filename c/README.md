@@ -9,7 +9,7 @@ Transliteration path: glibc `iconv` (`UTF-8` → `ASCII//TRANSLIT`). Matches the
 Bash/PHP modules, which is what the cross-language `validate_slug_scripts`
 harness validates against.
 
-**Version**: 1.0.1
+**Version**: 1.1.0
 
 ## Build
 
@@ -146,6 +146,7 @@ char *post_slug(const char *input_str,
   "empty string on failure" contract of the peer modules). A non-ASCII
   `sep_char` byte is such an error.
 - Input is truncated to 255 UTF-8 codepoints before processing.
+- Input that is not valid UTF-8 gives `""`, as in the Bash and PHP modules.
 - Locale-independent and thread-safe: each call runs under `C.UTF-8` via
   `uselocale()`, which is per-thread and restored before returning. The host
   program's global locale and any per-thread locale it set are left as they
@@ -153,14 +154,15 @@ char *post_slug(const char *input_str,
 
 ## Cross-language validation
 
-The C binary is wired into the existing harness — see
-`../unittests/validate_slug_scripts`. When `_post_slug` is built (or `cc` is
-present on `$PATH`), `'c'` is added to `Script_Types` and every input is
-verified against the Python, Bash, PHP, and JS outputs.
+The C binary takes part in the cross-language harness,
+`../unittests/validate_slug_scripts`. The harness runs `make build` first
+(so a stale binary is never the one tested), then compares every input
+against the Python, JS, PHP and Bash outputs, using `--stdin` so each
+implementation starts once per separator and case setting. Without `make`
+and `cc` it tests an existing build, and without one it skips C.
 
 ```bash
-cd ..  # post_slug project root
-( cd c && make ) && cd unittests \
+cd ../unittests \
   && ./validate_slug_scripts -q datasets/headlines.txt \
   && ./validate_slug_scripts -q datasets/booktitles.txt 127 '-' 0 \
   && ./validate_slug_scripts -q datasets/products.txt   0   '_,-' '0,1' \

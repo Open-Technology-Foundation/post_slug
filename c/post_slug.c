@@ -6,7 +6,7 @@
  * Build CLI:   cc -O2 -std=c11 -Wall -Wextra -o _post_slug post_slug.c
  * Build lib:   cc -O2 -std=c11 -DPOST_SLUG_LIB_ONLY -c post_slug.c
  *
- * Version: 1.0.1
+ * Version: 1.1.0
  */
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -21,7 +21,7 @@
 
 #include "post_slug.h"
 
-#define POST_SLUG_VERSION "1.0.1"
+#define POST_SLUG_VERSION "1.1.0"
 
 /* -------------------------------------------------------------------------- */
 /* helpers                                                                    */
@@ -97,6 +97,26 @@ static char *utf8_truncate(const char *in, size_t max_chars) {
 
 /* glibc iconv UTF-8 -> ASCII//TRANSLIT.
  * Returns malloc'd NUL-terminated string, or NULL on iconv_open failure. */
+/* Delete emoji and pictographs, U+1F300..U+1FAFF (UTF-8 F0 9F 8C 80 ..
+ * F0 9F AB BF), in place. They have no ASCII form, but iconv renders some
+ * as ':-D' or '<3', while NFKD (the Python and JS modules) gives nothing.
+ * Each test stops at the terminating NUL, so no byte past it is read; an
+ * incomplete sequence is left for iconv to reject. */
+static void drop_pictographs(char *s) {
+  char *w = s;
+  const char *r = s;
+  while (*r) {
+    const unsigned char *u = (const unsigned char *)r;
+    if (u[0] == 0xF0 && u[1] == 0x9F && u[2] >= 0x8C && u[2] <= 0xAB
+        && (u[3] & 0xC0) == 0x80) {
+      r += 4;
+      continue;
+    }
+    *w++ = *r++;
+  }
+  *w = '\0';
+}
+
 static char *iconv_translit(const char *in) {
   iconv_t cd = iconv_open("ASCII//TRANSLIT", "UTF-8");
   if (cd == (iconv_t)-1) return NULL;
@@ -124,9 +144,10 @@ static char *iconv_translit(const char *in) {
         outrem = outcap - used;
         continue;
       } else if (errno == EILSEQ || errno == EINVAL) {
-        /* skip the offending byte and continue */
-        if (inrem > 0) { inbuf++; inrem--; }
-        continue;
+        /* Invalid UTF-8. The bash and PHP modules' iconv call fails here and
+         * they return ''; give an empty result too, so the slug is "". */
+        outbuf = out;
+        break;
       } else {
         break;
       }
@@ -171,16 +192,29 @@ static char *slugify(const char *input_str,
   K("\xe2\x98\x85", " ");                      /* ★                  */
   K("?", "-");                  /* keep real '?' apart from iconv's '?' (7) */
   K("\xe2\x82\xac", "EUR");                    /* €                  */
+  K("\xc2\xa3", "GBP");                        /* £                  */
   K("\xc2\xa9", "C");                          /* ©                  */
   K("\xc2\xae", "R");                          /* ®                  */
   K("\xe2\x84\xa2", "-TM");                    /* ™                  */
   K("\xca\xbe", "");                           /* ʾ (php)            */
+  /* iconv gives these an ASCII form that Python and JS do not ('!', ':-)',
+   * '<3', '-'); delete them, as the other modules do. */
+  K("\xc2\xa1", "");                           /* ¡                  */
+  K("\xe2\x98\xba", "");                       /* ☺                  */
+  K("\xe2\x98\xbb", "");                       /* ☻                  */
+  K("\xe2\x99\xa1", "");                       /* ♡                  */
+  K("\xe2\x99\xa5", "");                       /* ♥                  */
+  K("\xe2\x9d\xa4", "");                       /* ❤                  */
+  K("\xc2\xad", "");                           /* soft hyphen        */
   #undef K
+  drop_pictographs(s);
 
-  /* (5) HTML entities -> '-'. Only if both '&' and ';' present. */
+  /* (5) HTML entities -> '-'. Only if both '&' and ';' present. An entity
+   * runs from '&' to the first ';' before a space or tab, as in the other
+   * modules' '&[^ \t;]*;'. */
   if (strchr(s, '&') && strchr(s, ';')) {
     regex_t re;
-    if (regcomp(&re, "&[^[:space:]]*;", REG_EXTENDED) == 0) {
+    if (regcomp(&re, "&[^ \t;]*;", REG_EXTENDED) == 0) {
       regmatch_t m;
       while (regexec(&re, s, 1, &m, 0) == 0) {
         size_t pre  = (size_t)m.rm_so;

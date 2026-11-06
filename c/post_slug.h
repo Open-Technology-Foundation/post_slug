@@ -3,7 +3,7 @@
  * Byte-compatible with the peer post_slug.{py,bash,php,js} implementations.
  * Follows the PHP/Bash transliteration path (iconv UTF-8 -> ASCII//TRANSLIT).
  *
- * Version: 1.0.1
+ * Version: 1.1.0
  */
 #ifndef POST_SLUG_H
 #define POST_SLUG_H

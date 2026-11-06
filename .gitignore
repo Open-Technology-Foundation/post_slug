@@ -134,7 +134,7 @@ tt.py
 ttt
 ttt.htm*
 ttt.py
-unittests/_post_slug.*
+unittests/_post_slug.c
 var/
 .venv
 .venv/

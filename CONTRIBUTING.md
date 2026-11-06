@@ -28,22 +28,24 @@ git checkout -b fix/your-bug-fix
 
 #### Important: Cross-Language Consistency
 
-**All changes must be implemented across all four language implementations:**
+**All changes must be implemented across all five language implementations:**
 - Python (`post_slug.py`)
 - JavaScript (`post_slug.js`)
 - PHP (`post_slug.php`)
 - Bash (`post_slug.bash`)
+- C (`c/post_slug.c`)
 
 ### 4. Test Your Changes
 
 ```bash
 cd unittests
-./validate_slug_scripts datasets/headlines.txt
-./validate_slug_scripts datasets/booktitles.txt
-./validate_slug_scripts datasets/edge_cases.txt
+./validate_slug_scripts -q datasets/headlines.txt
+./validate_slug_scripts -q datasets/booktitles.txt
+./validate_slug_scripts -q datasets/products.txt
+./validate_slug_scripts -q datasets/edge_cases.txt
 
-# Run Python unit tests
-python test_post_slug.py
+# Run the unit tests
+python3 -m pytest test_post_slug.py
 ```
 
 ### 5. Commit Your Changes
@@ -86,8 +88,16 @@ Example:
 '₹' => 'INR',  // Indian Rupee symbol
 
 # Bash
--e 's/₹/INR/g'  # Indian Rupee symbol
+input_str=${input_str//₹/INR}  # Indian Rupee symbol
+
+/* C */
+K("\xe2\x82\xb9", "INR");      /* ₹ Indian Rupee symbol */
 ```
+
+A character with no ASCII form should be deleted in every implementation.
+Python and JavaScript do that already; for PHP, Bash and C, check what iconv
+makes of it (`printf 'x₹y' | LC_ALL=C.UTF-8 iconv -f UTF-8 -t ASCII//TRANSLIT`)
+and add a deletion kludge if iconv gives it an ASCII form.
 
 ### Testing Requirements
 
@@ -111,10 +121,8 @@ This project follows [Semantic Versioning](https://semver.org/):
    ./update_version.sh 1.0.2
    ```
 
-2. **Update CHANGELOG.md:**
-   - Add new version section
-   - Document all changes
-   - Follow Keep a Changelog format
+2. **Add a changelog entry** to the docstrings of `post_slug.py`,
+   `post_slug.js` and `post_slug.php`, documenting all changes
 
 3. **Commit version bump:**
    ```bash
@@ -129,15 +137,19 @@ This project follows [Semantic Versioning](https://semver.org/):
 
 ### Version File Locations
 
-The `update_version.sh` script updates:
+The `update_version.sh` script updates, and checks, each of:
 - `VERSION` - Single source of truth
-- `post_slug.py` - `__version__` and docstring
+- `post_slug.py` - `__version__` and both docstring versions
 - `post_slug.js` - `@version` comment
 - `post_slug.php` - `@version` comment
 - `post_slug.bash` - Version comment
-- `slug-files` - Version comment
+- `slugify-files` - `VERSION` variable
+- `c/post_slug.c`, `c/post_slug.h`, `c/Makefile` - Version comments and
+  `POST_SLUG_VERSION`
+- `c/README.md`, `README.md` - Version line
 - `pyproject.toml` - Package version
-- `README.md` - Footer version
+
+It stops with an error naming the file if a version marker is not found.
 
 ## 🐛 Reporting Issues
 
@@ -171,7 +183,7 @@ The `update_version.sh` script updates:
 - [ ] Tests pass (`validate_slug_scripts`)
 - [ ] Documentation updated
 - [ ] Version updated (if applicable)
-- [ ] CHANGELOG.md updated
+- [ ] Changelog entries added (if applicable)
 - [ ] No merge conflicts
 
 ## 💡 Development Tips
@@ -182,7 +194,7 @@ The `update_version.sh` script updates:
 # Test specific implementation
 ./_post_slug.py "Test String"
 ./_post_slug.js "Test String"
-./_post_slug.bash "Test String"
+./_post_slug.sh "Test String"
 ./_post_slug.php "Test String"
 
 # Compare outputs
@@ -190,12 +202,13 @@ for impl in py js bash php; do
     echo -n "$impl: "
     ./_post_slug.$impl "Test String"
 done
+echo -n "c: "; ../c/_post_slug "Test String"
 ```
 
 ### Debugging Validation Failures
 
 ```bash
-# Run validation in verbose mode
+# Run validation in verbose mode (mismatches are also on stderr)
 ./validate_slug_scripts datasets/test.txt | less
 
 # Test specific parameters
@@ -206,7 +219,7 @@ done
 
 1. Ensure all tests pass
 2. Update version (see Versioning section)
-3. Update CHANGELOG.md
+3. Add changelog entries
 4. Create GitHub release
 5. Build and publish packages:
    ```bash

@@ -1,5 +1,5 @@
 # post_slug - C port Makefile (BCS1212 compliant)
-# Version: 1.0.1
+# Version: 1.1.0
 
 # Required BCS1212 variables
 PREFIX     ?= /usr/local
@@ -56,10 +56,9 @@ check:
 	  && echo 'post_slug: OK' \
 	  || echo 'post_slug: NOT FOUND (check PATH)'
 
-# Cross-language validation; small dataset for fast turnaround.
+# Cross-language validation; small dataset for fast turnaround. The
+# validator runs this directory's _post_slug itself.
 test: build
-	@cp _post_slug $(srcdir)../unittests/_post_slug.c
-	@chmod 755 $(srcdir)../unittests/_post_slug.c
 	cd $(srcdir)../unittests && ./validate_slug_scripts -q datasets/edge_cases.txt
 
 clean:
