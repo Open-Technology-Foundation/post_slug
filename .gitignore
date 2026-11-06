@@ -6,6 +6,9 @@ AUDIT-EVALUATE.md
 *.bak
 BASH-CODING-STANDARD.md
 build/
+c/_post_slug
+c/*.a
+c/*.o
 .cache
 CHANGES.md
 .claude/
@@ -144,3 +147,5 @@ wheels/
 yarn-debug.log*
 yarn-error.log*
 .git.add.commit.push
+.archive/
+.archive/

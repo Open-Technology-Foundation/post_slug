@@ -167,8 +167,27 @@ else
 	echo >&2 "Program 'php' cli was not found. Module post_slug.php will not be tested."
 fi
 
-# create _script files
+# C: prefer pre-built binary; fall back to ad-hoc compile via cc.
+if [[ -x "$PRGDIR/../c/_post_slug" ]]; then
+	cp -- "$PRGDIR/../c/_post_slug" "$PRGDIR/_post_slug.c" \
+		|| { echo >&2 "Cannot copy ../c/_post_slug to $PRGDIR"; exit 1; }
+	chmod -- 775 "$PRGDIR/_post_slug.c" \
+		|| { echo >&2 "Cannot chmod $PRGDIR/_post_slug.c"; exit 1; }
+	Script_Types+=('c')
+elif prg="$(command -v 'cc')" && [[ -n "$prg" ]]; then
+	if "$prg" -O2 -std=c11 -Wall -Wextra \
+			-o "$PRGDIR/_post_slug.c" "$PRGDIR/../c/post_slug.c" 2>/dev/null; then
+		Script_Types+=('c')
+	else
+		echo >&2 "C compile failed; module post_slug.c will not be tested."
+	fi
+else
+	echo >&2 "No pre-built _post_slug and 'cc' not found; post_slug.c will not be tested."
+fi
+
+# create _script files (C is already a compiled binary; skip template injection)
 for script_type in "${Script_Types[@]}"; do
+	[[ "$script_type" == 'c' ]] && continue
 	temp=$(cat -s "../post_slug.$script_type")
 	Script_Templates[$script_type]=${Script_Templates[$script_type]/--MODULE--/"$temp"}
 	echo "${Script_Templates[$script_type]}" > "$PRGDIR/_post_slug.$script_type"

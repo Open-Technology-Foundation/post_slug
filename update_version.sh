@@ -44,9 +44,28 @@ echo "✓ Updated post_slug.php"
 sed -i "s/# Version: [0-9]\+\.[0-9]\+\.[0-9]\+/# Version: $NEW_VERSION/" post_slug.bash
 echo "✓ Updated post_slug.bash"
 
-# Update slug-files version
-sed -i "s/# Version: [0-9]\+\.[0-9]\+\.[0-9]\+/# Version: $NEW_VERSION/" slug-files
-echo "✓ Updated slug-files"
+# Update slugify-files version
+sed -i "s/^declare -r VERSION=[0-9]\+\.[0-9]\+\.[0-9]\+$/declare -r VERSION=$NEW_VERSION/" slugify-files
+echo "✓ Updated slugify-files"
+
+# Update C port (post_slug.c, post_slug.h, Makefile)
+for f in c/post_slug.c c/post_slug.h c/Makefile; do
+  if [[ -f "$f" ]]; then
+    sed -i \
+      -e "s/Version: [0-9]\+\.[0-9]\+\.[0-9]\+/Version: $NEW_VERSION/" \
+      -e "s/(version [0-9]\+\.[0-9]\+\.[0-9]\+)/(version $NEW_VERSION)/" \
+      -e "s/^#define POST_SLUG_VERSION \"[^\"]*\"/#define POST_SLUG_VERSION \"$NEW_VERSION\"/" \
+      -- "$f" || { echo >&2 "✗ Failed to update $f"; exit 1; }
+    echo "✓ Updated $f"
+  fi
+done
+
+# Update C README
+if [[ -f c/README.md ]]; then
+  sed -i "s/\*\*Version\*\*: [0-9]\+\.[0-9]\+\.[0-9]\+/**Version**: $NEW_VERSION/" -- c/README.md \
+    || { echo >&2 '✗ Failed to update c/README.md'; exit 1; }
+  echo "✓ Updated c/README.md"
+fi
 
 # Update pyproject.toml
 sed -i "s/^version = \"[^\"]*\"/version = \"$NEW_VERSION\"/" pyproject.toml
