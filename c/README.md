@@ -18,11 +18,12 @@ never modifies the system unless an explicit target is given.
 
 ```bash
 make build      # builds _post_slug (CLI) and libpost_slug.a (static lib)
-make install    # installs binary -> $(BINDIR)/post_slug,
+make install    # installs binary -> $(BINDIR)/post_slug (+ slugify link),
                 #          library -> $(LIBDIR)/libpost_slug.a,
-                #          header  -> $(INCLUDEDIR)/post_slug.h
+                #          header  -> $(INCLUDEDIR)/post_slug.h,
+                #          manpage -> $(MANDIR)/post_slug.1 (+ slugify.1 link)
 make uninstall  # removes installed files
-make check      # verifies post_slug is callable
+make check      # verifies post_slug and slugify are callable
 make test       # runs cross-language validation on edge_cases dataset
 make clean      # removes build artefacts
 make help       # shows targets and variables
@@ -36,6 +37,7 @@ Variables (overridable):
 | `BINDIR`     | `$(PREFIX)/bin`                                  |
 | `LIBDIR`     | `$(PREFIX)/lib`                                  |
 | `INCLUDEDIR` | `$(PREFIX)/include`                              |
+| `MANDIR`     | `$(PREFIX)/share/man/man1`                       |
 | `DESTDIR`    | (empty — set for staged/packaging installs)      |
 | `CC`         | `cc`                                             |
 | `CFLAGS`     | `-O2 -std=c11 -Wall -Wextra -Wpedantic`          |
@@ -173,6 +175,7 @@ cd ../unittests \
 
 - `post_slug.c` — module body + optional CLI `main()`.
 - `post_slug.h` — public API.
+- `post_slug.1` — manpage for `post_slug` and `slugify`.
 - `Makefile`   — build CLI, static library, install, clean.
 
 #fin

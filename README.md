@@ -301,17 +301,19 @@ options.
 
 ### Command-Line Usage
 
-The C binary installs as `post_slug` (`cd c && sudo make install`). The Bash
-script takes the same arguments; link it under another name, such as
-`slugify`, so the two do not collide:
+The C binary installs as `post_slug`, with `slugify` as a symlink to it
+(`cd c && sudo make install`). An existing `slugify` symlink is replaced; a
+real file of that name, such as another package's `slugify`, is left alone,
+and `make check` reports when an earlier PATH entry shadows the link. The
+install also puts in a manpage, `man post_slug` (or `man slugify`). The
+Bash script takes the same arguments and runs as `./post_slug.bash`.
 
 ```bash
-ln -s /path/to/post_slug.bash /usr/local/bin/slugify
 ln -s /path/to/slugify-files /usr/local/bin/slugify-files
 
 post_slug "My Document Title!"    # my-document-title
 slugify "My Document Title!"      # my-document-title
-post_slug --stdin < titles.txt    # one slug per line (C binary only)
+slugify --stdin < titles.txt      # one slug per line
 ```
 
 ## 🔧 How It Works

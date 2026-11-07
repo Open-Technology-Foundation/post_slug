@@ -147,6 +147,7 @@ The `update_version.sh` script updates, and checks, each of:
 - `c/post_slug.c`, `c/post_slug.h`, `c/Makefile` - Version comments and
   `POST_SLUG_VERSION`
 - `c/README.md`, `README.md` - Version line
+- `c/post_slug.1` - Version and date on the `.TH` line
 - `pyproject.toml` - Package version
 
 It stops with an error naming the file if a version marker is not found.

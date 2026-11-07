@@ -43,6 +43,7 @@ bump() {
 }
 
 main() {
+  local -- today
   case ${1:-} in
     -h|--help) show_help; exit 0 ;;
     '')        >&2 show_help; exit 2 ;;
@@ -78,7 +79,12 @@ main() {
   bump c/README.md    '^\*\*Version\*\*: '
   bump pyproject.toml '^version = "' '"'
   bump README.md      '^\*\*Version\*\*: '
-  success "Version $NEW_VERSION set in 12 files"
+  # The manpage's .TH line carries the version and the release date
+  bump c/post_slug.1  '^\.TH POST_SLUG 1 "[0-9-]*" "post_slug ' '"'
+  today=$(date +%F) || die 1 'Cannot read the date'
+  sed -i "s/^\\(\\.TH POST_SLUG 1 \"\\)[0-9-]*\"/\\1$today\"/" -- c/post_slug.1 \
+    || die 1 'Cannot update the date in c/post_slug.1'
+  success "Version $NEW_VERSION set in 13 files"
 
   info 'Next steps:'
   info '  1. Add a changelog entry to the docstrings of post_slug.py, .js and .php'
